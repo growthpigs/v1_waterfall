@@ -5,13 +5,8 @@ const CIAReport = require('../../models/cia-report.model');
 const User = require('../../models/user.model');
 const auth = require('../../middlewares/auth.middleware');
 
-// Import services (to be implemented)
-const websiteAnalysisService = require('../../services/website-analysis.service');
-const competitorAnalysisService = require('../../services/competitor-analysis.service');
-const seoAnalysisService = require('../../services/seo-analysis.service');
-const marketResearchService = require('../../services/market-research.service');
-const socialProofAnalysisService = require('../../services/social-proof-analysis.service');
-const contentBibleGeneratorService = require('../../services/content-bible-generator.service');
+// CIA Workflow Orchestrator
+const ciaWorkflowService = require('../../services/cia-workflow.service');
 
 /**
  * @route   POST api/cia/reports
@@ -71,10 +66,11 @@ router.post(
         $set: { 'usage.ciaReports.lastUsed': new Date() }
       });
 
-      // Start the analysis process asynchronously
-      // This would typically be handled by a queue system in production
+      // Kick off the CIA workflow asynchronously (queue in prod)
       process.nextTick(() => {
-        startCIAAnalysisProcess(savedReport._id);
+        ciaWorkflowService
+          .startWorkflow(savedReport._id)
+          .catch(err => console.error('CIA workflow error:', err));
       });
 
       res.status(201).json({
@@ -329,238 +325,59 @@ router.post(
 );
 
 /**
- * @route   POST api/cia/reports/:id/analyze/website
- * @desc    Manually trigger website analysis for a report
+/**
+ * @route   POST api/cia/reports/:id/run
+ * @desc    Start or resume the full CIA workflow
  * @access  Private
  */
-router.post('/reports/:id/analyze/website', auth, async (req, res) => {
+router.post('/reports/:id/run', auth, async (req, res) => {
   try {
     const report = await CIAReport.findById(req.params.id);
-
     if (!report) {
       return res.status(404).json({ message: 'Report not found' });
     }
-
-    // Check if the report belongs to the user
     if (report.user.toString() !== req.user.id) {
-      return res.status(403).json({ message: 'Not authorized to analyze this report' });
+      return res.status(403).json({ message: 'Not authorized' });
     }
 
-    // Update report status
-    await report.updateStatus('website_analysis', 20);
+    process.nextTick(() =>
+      ciaWorkflowService
+        .startWorkflow(report._id)
+        .catch(err => console.error('CIA workflow error:', err))
+    );
 
-    // Trigger website analysis asynchronously
-    process.nextTick(async () => {
-      try {
-        await websiteAnalysisService.analyze(report._id);
-      } catch (error) {
-        console.error('Website analysis error:', error);
-        await report.addError('website_analysis', error.message);
-        await report.updateStatus('failed');
-      }
-    });
-
-    res.json({
-      message: 'Website analysis initiated',
-      status: report.status,
-      progress: report.progress
-    });
+    res.json({ message: 'Workflow started/resumed' });
   } catch (error) {
-    console.error('Website analysis initiation error:', error);
-    res.status(500).json({ message: 'Server error during analysis initiation' });
+    console.error('Start workflow error:', error);
+    res.status(500).json({ message: 'Server error while starting workflow' });
   }
 });
 
 /**
- * @route   POST api/cia/reports/:id/analyze/competitors
- * @desc    Manually trigger competitor analysis for a report
+ * @route   POST api/cia/reports/:id/phase/:phaseId
+ * @desc    Trigger a single CIA phase manually
  * @access  Private
  */
-router.post('/reports/:id/analyze/competitors', auth, async (req, res) => {
+router.post('/reports/:id/phase/:phaseId', auth, async (req, res) => {
   try {
-    const report = await CIAReport.findById(req.params.id);
-
+    const { id, phaseId } = req.params;
+    const report = await CIAReport.findById(id);
     if (!report) {
       return res.status(404).json({ message: 'Report not found' });
     }
-
-    // Check if the report belongs to the user
     if (report.user.toString() !== req.user.id) {
-      return res.status(403).json({ message: 'Not authorized to analyze this report' });
+      return res.status(403).json({ message: 'Not authorized' });
     }
 
-    // Check if website analysis is completed
-    if (!report.websiteAnalysis.completed) {
-      return res.status(400).json({ message: 'Website analysis must be completed first' });
-    }
-
-    // Update report status
-    await report.updateStatus('competitor_analysis', 40);
-
-    // Trigger competitor analysis asynchronously
-    process.nextTick(async () => {
-      try {
-        await competitorAnalysisService.analyze(report._id);
-      } catch (error) {
-        console.error('Competitor analysis error:', error);
-        await report.addError('competitor_analysis', error.message);
-        await report.updateStatus('failed');
-      }
-    });
-
-    res.json({
-      message: 'Competitor analysis initiated',
-      status: report.status,
-      progress: report.progress
-    });
+    await ciaWorkflowService.triggerPhase(id, phaseId);
+    res.json({ message: `Phase ${phaseId} triggered` });
   } catch (error) {
-    console.error('Competitor analysis initiation error:', error);
-    res.status(500).json({ message: 'Server error during analysis initiation' });
+    console.error('Trigger phase error:', error);
+    res.status(500).json({ message: 'Server error while triggering phase', error: error.message });
   }
 });
-
-/**
- * @route   POST api/cia/reports/:id/generate-bible
- * @desc    Manually trigger Master Content Bible generation
- * @access  Private
- */
-router.post('/reports/:id/generate-bible', auth, async (req, res) => {
-  try {
-    const report = await CIAReport.findById(req.params.id);
-
-    if (!report) {
-      return res.status(404).json({ message: 'Report not found' });
-    }
-
-    // Check if the report belongs to the user
-    if (report.user.toString() !== req.user.id) {
-      return res.status(403).json({ message: 'Not authorized to generate content bible for this report' });
-    }
-
-    // Check if all analyses are completed
-    if (!report.websiteAnalysis.completed || 
-        !report.competitorAnalysis.completed || 
-        !report.seoIntelligence.completed || 
-        !report.marketResearch.completed || 
-        !report.socialProofAnalysis.completed) {
-      return res.status(400).json({ message: 'All analyses must be completed first' });
-    }
-
-    // Update report status
-    await report.updateStatus('generating_content_bible', 90);
-
-    // Trigger content bible generation asynchronously
-    process.nextTick(async () => {
-      try {
-        await contentBibleGeneratorService.generate(report._id);
-        await report.updateStatus('completed', 100);
-      } catch (error) {
-        console.error('Content bible generation error:', error);
-        await report.addError('generating_content_bible', error.message);
-        await report.updateStatus('failed');
-      }
-    });
-
-    res.json({
-      message: 'Master Content Bible generation initiated',
-      status: report.status,
-      progress: report.progress
-    });
-  } catch (error) {
-    console.error('Content bible generation initiation error:', error);
-    res.status(500).json({ message: 'Server error during generation initiation' });
-  }
-});
-
 /**
  * Helper function to start the CIA analysis process
- * In a production environment, this would be handled by a queue system
- */
+ * LEGACY HELPER REMOVED – workflow now handled by ciaWorkflowService
 async function startCIAAnalysisProcess(reportId) {
-  try {
-    const report = await CIAReport.findById(reportId);
-    if (!report) {
-      console.error(`Report ${reportId} not found`);
-      return;
-    }
-
-    // Website Analysis
-    await report.updateStatus('website_analysis', 20);
-    try {
-      await websiteAnalysisService.analyze(reportId);
-    } catch (error) {
-      await report.addError('website_analysis', error.message);
-      await report.updateStatus('failed');
-      return;
-    }
-
-    // Competitor Analysis
-    await report.updateStatus('competitor_analysis', 40);
-    try {
-      await competitorAnalysisService.analyze(reportId);
-    } catch (error) {
-      await report.addError('competitor_analysis', error.message);
-      await report.updateStatus('failed');
-      return;
-    }
-
-    // SEO Analysis
-    await report.updateStatus('seo_analysis', 60);
-    try {
-      await seoAnalysisService.analyze(reportId);
-    } catch (error) {
-      await report.addError('seo_analysis', error.message);
-      await report.updateStatus('failed');
-      return;
-    }
-
-    // Market Research
-    await report.updateStatus('market_research', 70);
-    try {
-      await marketResearchService.analyze(reportId);
-    } catch (error) {
-      await report.addError('market_research', error.message);
-      await report.updateStatus('failed');
-      return;
-    }
-
-    // Social Proof Analysis
-    await report.updateStatus('social_proof_analysis', 80);
-    try {
-      await socialProofAnalysisService.analyze(reportId);
-    } catch (error) {
-      await report.addError('social_proof_analysis', error.message);
-      await report.updateStatus('failed');
-      return;
-    }
-
-    // Generate Master Content Bible
-    await report.updateStatus('generating_content_bible', 90);
-    try {
-      await contentBibleGeneratorService.generate(reportId);
-    } catch (error) {
-      await report.addError('generating_content_bible', error.message);
-      await report.updateStatus('failed');
-      return;
-    }
-
-    // Mark as completed
-    await report.updateStatus('completed', 100);
-    
-    console.log(`CIA analysis completed for report ${reportId}`);
-  } catch (error) {
-    console.error(`Error in CIA analysis process for report ${reportId}:`, error);
-    // Try to update report status if possible
-    try {
-      const report = await CIAReport.findById(reportId);
-      if (report) {
-        await report.addError('process', error.message);
-        await report.updateStatus('failed');
-      }
-    } catch (updateError) {
-      console.error(`Failed to update error status for report ${reportId}:`, updateError);
-    }
-  }
-}
-
 module.exports = router;
