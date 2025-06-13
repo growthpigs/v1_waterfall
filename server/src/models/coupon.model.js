@@ -45,13 +45,23 @@ const couponSchema = new mongoose.Schema(
     },
     
     // Validity constraints
+    isLifetime: {
+      type: Boolean,
+      default: false,
+      description: 'If true, the coupon never expires'
+    },
     expiresAt: {
       type: Date,
       default: function() {
-        // Default to 1 year from creation
+        // Default to 1 year from creation, unless it's a lifetime coupon
+        if (this.isLifetime) return null;
         const oneYear = new Date();
         oneYear.setFullYear(oneYear.getFullYear() + 1);
         return oneYear;
+      },
+      required: function() {
+        // Only required if not a lifetime coupon
+        return !this.isLifetime;
       }
     },
     maxUses: {
@@ -62,6 +72,14 @@ const couponSchema = new mongoose.Schema(
     isActive: {
       type: Boolean,
       default: true
+    },
+    
+    // Billing discount duration (for time-limited discounts)
+    billingDiscountDuration: {
+      type: Number,
+      min: [0, 'Billing discount duration cannot be negative'],
+      default: 0, // 0 means applies to all billing cycles (permanent discount)
+      description: 'Number of months the discount applies for (0 = permanent)'
     },
     
     // Description and metadata
@@ -141,7 +159,7 @@ const couponSchema = new mongoose.Schema(
 // Virtual for coupon status
 couponSchema.virtual('status').get(function() {
   if (!this.isActive) return 'inactive';
-  if (this.expiresAt && new Date() > this.expiresAt) return 'expired';
+  if (!this.isLifetime && this.expiresAt && new Date() > this.expiresAt) return 'expired';
   if (this.maxUses !== null && this.uses >= this.maxUses) return 'exhausted';
   return 'active';
 });
@@ -152,13 +170,38 @@ couponSchema.virtual('remainingUses').get(function() {
   return Math.max(0, this.maxUses - this.uses);
 });
 
+// Virtual for discount description
+couponSchema.virtual('discountDescription').get(function() {
+  if (this.discountType === DISCOUNT_TYPES.PERCENTAGE) {
+    return `${this.discountValue}% off`;
+  } else if (this.discountType === DISCOUNT_TYPES.FIXED) {
+    return `$${this.discountValue} off`;
+  } else if (this.discountType === DISCOUNT_TYPES.FREE) {
+    return 'Free';
+  }
+  return '';
+});
+
+// Virtual for duration description
+couponSchema.virtual('durationDescription').get(function() {
+  if (this.isLifetime) {
+    return 'Lifetime';
+  } else if (this.billingDiscountDuration === 0) {
+    return 'Permanent';
+  } else if (this.billingDiscountDuration === 1) {
+    return 'First month only';
+  } else {
+    return `First ${this.billingDiscountDuration} months`;
+  }
+});
+
 // Method to check if coupon is valid
 couponSchema.methods.isValid = function() {
   // Check if active
   if (!this.isActive) return false;
   
-  // Check if expired
-  if (this.expiresAt && new Date() > this.expiresAt) return false;
+  // Check if expired (unless lifetime)
+  if (!this.isLifetime && this.expiresAt && new Date() > this.expiresAt) return false;
   
   // Check if max uses reached
   if (this.maxUses !== null && this.uses >= this.maxUses) return false;
@@ -211,6 +254,8 @@ couponSchema.methods.applyToUser = async function(userId, subscriptionTier, amou
   return {
     discountAmount,
     discountType: this.discountType,
+    billingDiscountDuration: this.billingDiscountDuration,
+    isLifetime: this.isLifetime,
     freeUsageLimits: this.freeUsageLimits
   };
 };

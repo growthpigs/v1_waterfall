@@ -159,7 +159,7 @@ const userSchema = new mongoose.Schema(
           default: 'apify'
         },
         apiKey: String,              // token / key if required by provider
-        config: Schema.Types.Mixed   // flexible config blob for provider-specific options
+        config: mongoose.Schema.Types.Mixed   // flexible config blob for provider-specific options
       },
       notion: {
         enabled: {
