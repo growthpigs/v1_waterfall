@@ -11,7 +11,27 @@ const matter = require('gray-matter');
 
 class PromptManagerService {
   constructor() {
-    this.promptsBasePath = path.join(process.cwd(), 'docs', 'cia-workflow', 'prompts');
+    /*
+     * Prompts live under the repository-level `docs/cia-workflow/prompts`.
+     * When the server starts inside the `server` folder the cwd is
+     * `<repo>/server`, so using `process.cwd()` would produce an incorrect
+     * path (`<repo>/server/docs/...`).  Instead, resolve the path
+     * relative to **this file’s location**, going three levels up to the
+     * repository root.
+     *
+     *   __dirname -> <repo>/server/src/services
+     *   ../../../ -> <repo>/
+     *   docs/cia-workflow/prompts
+     */
+    this.promptsBasePath = path.join(
+      __dirname,
+      '..',
+      '..',
+      '..',
+      'docs',
+      'cia-workflow',
+      'prompts'
+    );
     this.promptCache = new Map();
     this.initialized = false;
   }
