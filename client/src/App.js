@@ -259,6 +259,41 @@ const CartwheelBundle = () => (
 // Main App component
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [user, setUser] = useState(null);
+
+  // Google OAuth sign-in handler
+  const signInWithGoogle = () => {
+    const width = 500;
+    const height = 600;
+    const left = window.screenX + (window.outerWidth - width) / 2;
+    const top = window.screenY + (window.outerHeight - height) / 2.5;
+    const authWindow = window.open(
+      '/api/auth/google',
+      'GoogleLogin',
+      `width=${width},height=${height},left=${left},top=${top}`
+    );
+
+    // Listener waits for message from OAuth popup
+    const handleMessage = (event) => {
+      if (!event.data?.token) return;
+      // Persist token if desired (localStorage)
+      localStorage.setItem('token', event.data.token);
+      localStorage.setItem('refreshToken', event.data.refreshToken);
+      setUser(event.data.user);
+      setIsAuthenticated(true);
+      window.removeEventListener('message', handleMessage);
+      authWindow?.close();
+    };
+
+    window.addEventListener('message', handleMessage, false);
+  };
+
+  const logout = () => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('refreshToken');
+    setIsAuthenticated(false);
+    setUser(null);
+  };
   
   return (
     <ThemeProvider theme={theme}>
@@ -275,9 +310,11 @@ function App() {
               Project Waterfall
             </Logo>
             <UserMenu>
-              <button onClick={() => setIsAuthenticated(!isAuthenticated)}>
-                {isAuthenticated ? 'Sign Out' : 'Sign In'}
-              </button>
+              {isAuthenticated ? (
+                <button onClick={logout}>Sign Out</button>
+              ) : (
+                <button onClick={signInWithGoogle}>Sign in with Google</button>
+              )}
             </UserMenu>
           </Header>
           

@@ -6,6 +6,10 @@ const crypto = require('crypto');
 const { check, validationResult } = require('express-validator');
 const User = require('../../models/user.model');
 const config = require('../../config');
+// Passport for OAuth
+const passport = require('passport');
+// Ensure strategies are loaded
+require('../../config/passport');
 
 // Middleware for authentication
 const auth = require('../../middlewares/auth.middleware');
@@ -380,5 +384,81 @@ router.post('/logout', (req, res) => {
   // This endpoint is for consistency and potential future server-side logout functionality
   res.json({ message: 'Logged out successfully' });
 });
+
+/**
+ * --------------------------------------------------------------------------
+ * Google OAuth Routes
+ * --------------------------------------------------------------------------
+ */
+
+/**
+ * @route   GET api/auth/google
+ * @desc    Initiate Google OAuth
+ * @access  Public
+ */
+router.get(
+  '/google',
+  passport.authenticate('google', {
+    scope: ['profile', 'email'],
+    session: false,
+  })
+);
+
+/**
+ * @route   GET api/auth/google/callback
+ * @desc    Google OAuth callback
+ * @access  Public
+ */
+router.get(
+  '/google/callback',
+  passport.authenticate('google', {
+    session: false,
+    failureRedirect: '/login', // Front-end route for failure
+  }),
+  async (req, res) => {
+    try {
+      // Passport sets req.user
+      const user = req.user;
+
+      // Generate JWT + refresh token
+      const token = user.generateAuthToken();
+      const refreshToken = user.generateRefreshToken();
+
+      // In a traditional web app we'd redirect. In SPA we can close window
+      // or send data for the opener window to consume.
+      // For Factory we simply return JSON the client JS can handle.
+      res.set(
+        'Content-Type',
+        'text/html; charset=utf-8'
+      ).send(`
+        <script>
+          (function() {
+            window.opener && window.opener.postMessage(
+              ${JSON.stringify({
+                token,
+                refreshToken,
+                user: {
+                  id: user._id,
+                  email: user.email,
+                  firstName: user.firstName,
+                  lastName: user.lastName,
+                  fullName: user.fullName,
+                  isEmailVerified: user.isEmailVerified,
+                  subscription: user.subscription.tier,
+                  role: user.role,
+                },
+              })},
+              '*'
+            );
+            window.close();
+          })();
+        </script>
+      `);
+    } catch (error) {
+      console.error('Google OAuth callback error:', error);
+      res.status(500).json({ message: 'Server error during Google OAuth' });
+    }
+  }
+);
 
 module.exports = router;

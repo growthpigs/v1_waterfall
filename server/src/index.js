@@ -5,6 +5,8 @@ const cors = require('cors');
 const helmet = require('helmet');
 const compression = require('compression');
 const morgan = require('morgan');
+const session = require('express-session');
+const passport = require('passport');
 const xss = require('xss-clean');
 const rateLimit = require('express-rate-limit');
 const path = require('path');
@@ -18,9 +20,13 @@ const userRoutes = require('./api/routes/user.routes');
 const ciaRoutes = require('./api/routes/cia.routes');
 const cartwheelRoutes = require('./api/routes/cartwheel.routes');
 const dataForSEORoutes = require('./api/routes/dataForSEO.routes');
+const adminRoutes = require('./api/routes/admin.routes');
 
 // Import error handling middleware
 const { errorHandler, notFound } = require('./middlewares/error.middleware');
+
+// Load passport strategies
+require('./config/passport');
 
 // Initialize Express app
 const app = express();
@@ -36,6 +42,16 @@ const limiter = rateLimit({
 // Apply middleware
 app.use(cors());
 app.use(helmet());
+app.use(
+  session({
+    secret: config.jwt.secret, // reuse JWT secret for simplicity
+    resave: false,
+    saveUninitialized: false,
+    cookie: { secure: false }, // set to true behind HTTPS proxy
+  })
+);
+app.use(passport.initialize());
+app.use(passport.session());
 app.use(compression());
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
@@ -60,6 +76,7 @@ app.use('/api/users', userRoutes);
 app.use('/api/cia', ciaRoutes);
 app.use('/api/cartwheel', cartwheelRoutes);
 app.use('/api/dataforseo', dataForSEORoutes);
+app.use('/api/admin', adminRoutes);
 
 // API health check route
 app.get('/api/health', (req, res) => {

@@ -49,6 +49,20 @@ const userSchema = new mongoose.Schema(
     resetPasswordExpires: Date,
     lastLogin: Date,
     
+    // OAuth / SSO information
+    oauth: {
+      google: {
+        id: String,
+        email: String,
+        name: String,
+        picture: String,
+        accessToken: String,
+        refreshToken: String,
+        lastLogin: Date
+      }
+      // Additional providers (facebook, github, etc.) can be added here later
+    },
+    
     // Subscription information
     subscription: {
       tier: {
@@ -133,6 +147,19 @@ const userSchema = new mongoose.Schema(
           default: false
         }
       },
+      /* Generic social-media data source (e.g. Apify, custom scrapers, etc.) */
+      socialMedia: {
+        enabled: {                   // enable / disable integration
+          type: Boolean,
+          default: false
+        },
+        provider: {                  // 'apify', 'custom', 'direct', etc.
+          type: String,
+          enum: ['apify', 'custom', 'direct'],
+          default: 'apify'
+        },
+        apiKey: String,              // token / key if required by provider
+        config: Schema.Types.Mixed   // flexible config blob for provider-specific options
       },
       notion: {
         enabled: {
@@ -175,6 +202,10 @@ const userSchema = new mongoose.Schema(
       },
       apiCalls: {
         dataForSEO: {
+          type: Number,
+          default: 0
+        },
+        socialMedia: {
           type: Number,
           default: 0
         }

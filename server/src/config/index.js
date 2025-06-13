@@ -16,6 +16,16 @@ const config = {
     refreshExpiresIn: process.env.JWT_REFRESH_EXPIRES_IN || '30d',
   },
   
+  // OAuth / SSO configuration
+  oauth: {
+    google: {
+      clientId: process.env.GOOGLE_CLIENT_ID,
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+      callbackUrl: process.env.GOOGLE_CALLBACK_URL || '/api/auth/google/callback',
+    },
+    // Additional providers can be added here later (facebook, github, etc.)
+  },
+  
   // DataForSEO configuration
   dataForSEO: {
     login: process.env.DATAFORSEO_LOGIN,
