@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <link rel="icon" href="%PUBLIC_URL%/favicon.ico" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#5B21B6" />
+    <meta
+      name="description"
+      content="Project Waterfall - A comprehensive marketing intelligence platform for content creation, SEO optimization, and marketing strategy development"
+    />
+    <link rel="apple-touch-icon" href="%PUBLIC_URL%/logo192.png" />
+    <link rel="manifest" href="%PUBLIC_URL%/manifest.json" />
+    
+    <!-- Preconnect to Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    
+    <!-- Load Inter and Roboto Mono fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Roboto+Mono:wght@400;500&display=swap" rel="stylesheet">
+    
+    <title>Project Waterfall | Marketing Intelligence Platform</title>
+    
+    <style>
+      /* Initial loading styles */
+      body {
+        margin: 0;
+        padding: 0;
+        font-family: 'Inter', sans-serif;
+        background-color: #111827;
+        color: #FFFFFF;
+      }
+      
+      #root {
+        min-height: 100vh;
+      }
+      
+      .loading-screen {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        height: 100vh;
+        background: linear-gradient(135deg, #5B21B6 0%, #2563EB 100%);
+      }
+      
+      .loading-logo {
+        margin-bottom: 2rem;
+        animation: pulse 2s infinite;
+      }
+      
+      @keyframes pulse {
+        0% { opacity: 0.6; }
+        50% { opacity: 1; }
+        100% { opacity: 0.6; }
+      }
+    </style>
+  </head>
+  <body>
+    <noscript>You need to enable JavaScript to run Project Waterfall.</noscript>
+    <div id="root">
+      <!-- Loading screen (shown until React renders) -->
+      <div class="loading-screen">
+        <div class="loading-logo">
+          <svg width="80" height="80" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M12 2L2 7L12 12L22 7L12 2Z" fill="white" />
+            <path d="M2 17L12 22L22 17" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+            <path d="M2 12L12 17L22 12" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        </div>
+        <h1>Project Waterfall</h1>
+        <p>Loading your marketing intelligence platform...</p>
+      </div>
+    </div>
+  </body>
+</html>
