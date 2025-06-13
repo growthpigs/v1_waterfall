@@ -21,6 +21,7 @@ const ciaRoutes = require('./api/routes/cia.routes');
 const cartwheelRoutes = require('./api/routes/cartwheel.routes');
 const dataForSEORoutes = require('./api/routes/dataForSEO.routes');
 const adminRoutes = require('./api/routes/admin.routes');
+const creditsRoutes = require('./api/routes/credits.routes'); // Ops Credits system
 
 // Import error handling middleware
 const { errorHandler, notFound } = require('./middlewares/error.middleware');
@@ -77,6 +78,7 @@ app.use('/api/cia', ciaRoutes);
 app.use('/api/cartwheel', cartwheelRoutes);
 app.use('/api/dataforseo', dataForSEORoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/credits', creditsRoutes); // <-- new Ops Credits endpoints
 
 // API health check route
 app.get('/api/health', (req, res) => {

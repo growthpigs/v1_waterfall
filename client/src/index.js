@@ -2,6 +2,8 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App';
 import reportWebVitals from './reportWebVitals';
+// Import global Tailwind CSS styles
+import './styles/globals.css';
 
 // Error boundary component to catch rendering errors
 class ErrorBoundary extends React.Component {

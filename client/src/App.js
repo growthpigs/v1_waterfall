@@ -2,6 +2,10 @@ import React, { useState } from 'react';
 import { BrowserRouter as Router, Routes, Route, Link } from 'react-router-dom';
 import styled, { ThemeProvider, createGlobalStyle } from 'styled-components';
 
+// NEW: real CIA Wizard + Ops Credit components
+import CIAWizard from './components/CIA/CIAWizard';
+import CreditDisplay from './components/OpsCreditSystem/CreditDisplay';
+
 // Theme definition
 const theme = {
   colors: {
@@ -220,18 +224,6 @@ const Dashboard = () => (
   </>
 );
 
-const CIAWizard = () => (
-  <>
-    <h1><GradientText>CIA</GradientText> Wizard</h1>
-    <p>The Colossal Intelligence Arsenal will gather and process data from various sources to create your "Master Content Bible".</p>
-    
-    <PlaceholderCard>
-      <h2>Coming Soon</h2>
-      <p>The CIA Wizard is currently under development. Check back in Phase 1 milestone 1.6.</p>
-    </PlaceholderCard>
-  </>
-);
-
 const ClarityBoard = () => (
   <>
     <h1><GradientText>Clarity Board</GradientText></h1>
@@ -326,6 +318,7 @@ function App() {
                 <NavLink to="/cia">CIA</NavLink>
                 <NavLink to="/clarity-board">Clarity Board</NavLink>
                 <NavLink to="/cartwheel">Cartwheel Bundle</NavLink>
+                <NavLink to="/credits">Ops Credits</NavLink>
               </NavSection>
               
               <NavSection>
@@ -342,6 +335,7 @@ function App() {
                 <Route path="/cia" element={<CIAWizard />} />
                 <Route path="/clarity-board" element={<ClarityBoard />} />
                 <Route path="/cartwheel" element={<CartwheelBundle />} />
+                <Route path="/credits" element={<CreditDisplay />} />
                 <Route path="*" element={<h1>Page Not Found</h1>} />
               </Routes>
             </MainContent>
