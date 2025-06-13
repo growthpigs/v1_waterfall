@@ -19,27 +19,10 @@ const config = {
   // DataForSEO configuration
   dataForSEO: {
     login: process.env.DATAFORSEO_LOGIN,
+    // NOTE: use the API password, **not** the web-interface login password
     password: process.env.DATAFORSEO_PASSWORD,
     baseUrl: process.env.DATAFORSEO_BASE_URL || 'https://api.dataforseo.com',
     useLiveData: process.env.DATAFORSEO_USE_LIVE_DATA === 'true' || false,
-  },
-  
-  // Google Trends configuration
-  googleTrends: {
-    apiKey: process.env.GOOGLE_TRENDS_API_KEY,
-  },
-  
-  // Social Media APIs configuration
-  socialMedia: {
-    twitter: {
-      apiKey: process.env.TWITTER_API_KEY,
-      apiSecret: process.env.TWITTER_API_SECRET,
-      bearerToken: process.env.TWITTER_BEARER_TOKEN,
-    },
-    tiktok: {
-      apiKey: process.env.TIKTOK_API_KEY,
-      apiSecret: process.env.TIKTOK_API_SECRET,
-    },
   },
   
   // Notion API configuration

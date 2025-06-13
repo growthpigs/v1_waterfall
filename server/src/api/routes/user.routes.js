@@ -323,7 +323,8 @@ router.put('/subscription/cancel', auth, async (req, res) => {
  */
 router.put('/integrations', auth, async (req, res) => {
   try {
-    const { dataForSEO, googleTrends, twitter, tiktok, notion } = req.body;
+    // Only DataForSEO and Notion are currently supported
+    const { dataForSEO, notion } = req.body;
 
     // Build integrations object
     const integrationsFields = {};
@@ -340,42 +341,6 @@ router.put('/integrations', auth, async (req, res) => {
       }
       if (dataForSEO.useLiveData !== undefined) {
         integrationsFields['integrations.dataForSEO.useLiveData'] = dataForSEO.useLiveData;
-      }
-    }
-    
-    if (googleTrends) {
-      if (googleTrends.enabled !== undefined) {
-        integrationsFields['integrations.googleTrends.enabled'] = googleTrends.enabled;
-      }
-      if (googleTrends.apiKey) {
-        integrationsFields['integrations.googleTrends.apiKey'] = googleTrends.apiKey;
-      }
-    }
-    
-    if (twitter) {
-      if (twitter.enabled !== undefined) {
-        integrationsFields['integrations.twitter.enabled'] = twitter.enabled;
-      }
-      if (twitter.apiKey) {
-        integrationsFields['integrations.twitter.apiKey'] = twitter.apiKey;
-      }
-      if (twitter.apiSecret) {
-        integrationsFields['integrations.twitter.apiSecret'] = twitter.apiSecret;
-      }
-      if (twitter.bearerToken) {
-        integrationsFields['integrations.twitter.bearerToken'] = twitter.bearerToken;
-      }
-    }
-    
-    if (tiktok) {
-      if (tiktok.enabled !== undefined) {
-        integrationsFields['integrations.tiktok.enabled'] = tiktok.enabled;
-      }
-      if (tiktok.apiKey) {
-        integrationsFields['integrations.tiktok.apiKey'] = tiktok.apiKey;
-      }
-      if (tiktok.apiSecret) {
-        integrationsFields['integrations.tiktok.apiSecret'] = tiktok.apiSecret;
       }
     }
     

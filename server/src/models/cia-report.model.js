@@ -505,9 +505,8 @@ const ciaReportSchema = new Schema({
     endTime: Date,
     totalDuration: Number, // in seconds
     apiCalls: {
-      dataForSEO: Number,
-      googleTrends: Number,
-      socialMedia: Number
+      // Only DataForSEO is tracked; it now covers trends & SEO
+      dataForSEO: Number
     },
     errors: [{
       stage: String,

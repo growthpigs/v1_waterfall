@@ -44,9 +44,8 @@ Full backlog lives in _IMPLEMENTATION_ROADMAP.md_.
 
 ## 4. Outstanding Requirements / Inputs
 1. **API credentials**  
-   • DataForSEO login/password  
-   • Google Trends key  
-   • Twitter / TikTok / Notion tokens  
+   • DataForSEO email + API password  
+   • Notion API key  
 2. **Design assets** – Logos, exact colour tokens, icons.  
 3. **Billing decision** – Stripe vs Paddle (needed Phase 4).  
 4. **Hosting target** – AWS / GCP selection for CI deploy pipeline.

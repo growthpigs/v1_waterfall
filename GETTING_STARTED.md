@@ -58,7 +58,10 @@ npm run install-all
 2. Fill in:
    - `MONGODB_URI` – `mongodb://localhost:27017/waterfall` **or** Atlas string  
    - `JWT_SECRET` / `JWT_REFRESH_SECRET`
-   - 3rd-party API keys (DataForSEO, Twitter → optional)
+   - **DataForSEO credentials**  
+     * `DATAFORSEO_LOGIN` – your account email  
+     * `DATAFORSEO_PASSWORD` – **API password** (⚠️ _not_ the web-interface login password)  
+   - **Notion API key / database ID** (for content export)
 
 > Keep secrets **out of version control**.
 
