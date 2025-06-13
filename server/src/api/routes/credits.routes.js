@@ -20,7 +20,7 @@ const validate = (req, res, next) => {
  * @description Get current user's credit balance
  * @access Private
  */
-router.get('/balance', auth(), async (req, res, next) => {
+router.get('/balance', auth, async (req, res, next) => {
   try {
     const balance = await creditsService.getUserBalance(req.user.id);
     res.json(balance);
@@ -77,7 +77,7 @@ router.get('/operations/:operationId', async (req, res, next) => {
  * @description Check if user has enough credits for an operation
  * @access Private
  */
-router.get('/check/:operationId', auth(), async (req, res, next) => {
+router.get('/check/:operationId', auth, async (req, res, next) => {
   try {
     const result = await creditsService.checkUserCredits(req.user.id, req.params.operationId);
     res.json(result);
@@ -93,7 +93,7 @@ router.get('/check/:operationId', auth(), async (req, res, next) => {
  */
 router.post(
   '/use/:operationId',
-  auth(),
+  auth,
   [
     param('operationId').notEmpty().withMessage('Operation ID is required'),
     body('metadata').optional().isObject().withMessage('Metadata must be an object')
@@ -127,7 +127,7 @@ router.post(
  */
 router.post(
   '/purchase',
-  auth(),
+  auth,
   [
     body('packageId').notEmpty().withMessage('Package ID is required'),
     body('paymentDetails').isObject().withMessage('Payment details are required'),
@@ -156,7 +156,7 @@ router.post(
  */
 router.get(
   '/transactions',
-  auth(),
+  auth,
   [
     query('page').optional().isInt({ min: 1 }).withMessage('Page must be a positive integer'),
     query('limit').optional().isInt({ min: 1, max: 100 }).withMessage('Limit must be between 1 and 100'),
@@ -191,7 +191,7 @@ router.get(
  */
 router.get(
   '/admin/users/:userId/balance',
-  auth(),
+  auth,
   authorize('admin', 'superadmin'),
   async (req, res, next) => {
     try {
@@ -210,7 +210,7 @@ router.get(
  */
 router.get(
   '/admin/users/:userId/transactions',
-  auth(),
+  auth,
   authorize('admin', 'superadmin'),
   [
     query('page').optional().isInt({ min: 1 }).withMessage('Page must be a positive integer'),
@@ -244,7 +244,7 @@ router.get(
  */
 router.post(
   '/admin/operations',
-  auth(),
+  auth,
   authorize('admin', 'superadmin'),
   [
     body('operationId').notEmpty().withMessage('Operation ID is required'),
@@ -273,7 +273,7 @@ router.post(
  */
 router.put(
   '/admin/operations/:operationId',
-  auth(),
+  auth,
   authorize('admin', 'superadmin'),
   [
     body('creditCost').optional().isInt({ min: 0 }).withMessage('Credit cost must be a non-negative integer'),
@@ -300,7 +300,7 @@ router.put(
  */
 router.post(
   '/admin/packages',
-  auth(),
+  auth,
   authorize('admin', 'superadmin'),
   [
     body('name').notEmpty().withMessage('Name is required'),
@@ -331,7 +331,7 @@ router.post(
  */
 router.put(
   '/admin/packages/:packageId',
-  auth(),
+  auth,
   authorize('admin', 'superadmin'),
   [
     body('name').optional().notEmpty().withMessage('Name cannot be empty'),
@@ -361,7 +361,7 @@ router.put(
  */
 router.post(
   '/admin/users/:userId/adjust',
-  auth(),
+  auth,
   authorize('admin', 'superadmin'),
   [
     body('amount').isInt({ min: -1000000, max: 1000000 }).withMessage('Amount must be an integer between -1,000,000 and 1,000,000'),
