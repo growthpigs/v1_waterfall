@@ -237,7 +237,13 @@ class CIAWorkflowService {
     }
     
     // Mark as completed when all phases are done
-    await report.updateStatus('completed', 100);
+    // Ensure the final phase is reflected as fully complete (phase 6 @ 100 %)
+    await report.updateStatus(
+      'completed',                     // overall status
+      100,                             // overall progress %
+      Object.values(PHASES).length,    // currentPhase = last phase (6)
+      100                              // phaseProgress = 100 %
+    );
     console.log(`[CIAWorkflow] Workflow completed for report ${report._id}`);
   }
 
