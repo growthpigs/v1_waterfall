@@ -160,8 +160,10 @@ router.get('/reports/:id', auth, async (req, res) => {
 router.get('/reports/:id/status', auth, async (req, res) => {
   try {
     const report = await CIAReport.findById(req.params.id)
-      // we need the user field to do an ownership check
-      .select('status progress currentPhase phaseProgress processingMetadata.errors user');
+      /* we need the user field to do an ownership check */
+      .select(
+        'status progress currentPhase phaseProgress processingMetadata.errors user'
+      );
 
     if (!report) {
       return res.status(404).json({ message: 'Report not found' });
@@ -172,13 +174,33 @@ router.get('/reports/:id/status', auth, async (req, res) => {
       return res.status(403).json({ message: 'Not authorized to access this report' });
     }
 
-    res.json({
-      status: report.status,
-      progress: report.progress,
-      currentPhase: report.currentPhase ?? null,
-      phaseProgress: report.phaseProgress ?? null,
-      errors: report.processingMetadata.errors || []
-    });
+    /* ------------------------------------------------------------------ */
+    /* Concise diagnostic logging (avoid huge JSON dumps in prod)         */
+    /* ------------------------------------------------------------------ */
+    console.log(
+      `[CIA STATUS] id=${report._id} ` +
+      `status=${report.status} progress=${report.progress} ` +
+      `currentPhase=${report.currentPhase ?? 'null'} ` +
+      `phaseProgress=${report.phaseProgress ?? 'null'}`
+    );
+
+    const status          = report.status;
+    const progress        = report.progress;
+    const currentPhase    = report.currentPhase ?? null;
+    const phaseProgress   = report.phaseProgress ?? null;
+    const errors          = report.processingMetadata.errors || [];
+
+    const responsePayload = {
+      status,
+      progress,
+      currentPhase,
+      phaseProgress,
+      errors
+    };
+
+    console.log('[CIA STATUS] Response payload:', responsePayload);
+
+    res.json(responsePayload);
   } catch (error) {
     console.error('Get CIA report status error:', error);
     res.status(500).json({ message: 'Server error while retrieving report status' });
