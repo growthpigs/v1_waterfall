@@ -9,6 +9,15 @@ const auth = require('../../middlewares/auth.middleware');
 const ciaWorkflowService = require('../../services/cia-workflow.service');
 
 /**
+ * Resolve the effective MongoDB ObjectId to use for the current request.
+ * Demo accounts use a fixed, valid ObjectId so we can safely store links
+ * without polluting the real User collection.
+ */
+const DEMO_OBJECT_ID = '507f1f77bcf86cd799439011'; // hard-coded, non-conflicting
+const getEffectiveUserId = (req) =>
+  req.user?.id === 'demo-user-123' ? DEMO_OBJECT_ID : req.user.id;
+
+/**
  * @route   POST api/cia/reports
  * @desc    Create a new CIA report (start the wizard)
  * @access  Private (requires Basic subscription or higher)
@@ -32,7 +41,7 @@ router.post(
     try {
       // Create new report
       const newReport = new CIAReport({
-        user: req.user.id,
+        user: getEffectiveUserId(req),
         name: req.body.name,
         description: req.body.description,
         initialData: {
@@ -61,10 +70,17 @@ router.post(
       const savedReport = await newReport.save();
 
       // Update user usage statistics
-      await User.findByIdAndUpdate(req.user.id, {
-        $inc: { 'usage.ciaReports.count': 1 },
-        $set: { 'usage.ciaReports.lastUsed': new Date() }
-      });
+      // Skip DB update for the hard-coded demo account
+      if (req.user.id !== 'demo-user-123') {
+        await User.findByIdAndUpdate(
+          req.user.id,
+          {
+            $inc: { 'usage.ciaReports.count': 1 },
+            $set: { 'usage.ciaReports.lastUsed': new Date() }
+          },
+          { new: false }
+        );
+      }
 
       // Kick off the CIA workflow asynchronously (queue in prod)
       process.nextTick(() => {
@@ -97,7 +113,7 @@ router.post(
  */
 router.get('/reports', auth, async (req, res) => {
   try {
-    const reports = await CIAReport.find({ user: req.user.id })
+    const reports = await CIAReport.find({ user: getEffectiveUserId(req) })
       .select('name description status progress createdAt updatedAt')
       .sort({ createdAt: -1 });
 
@@ -121,8 +137,9 @@ router.get('/reports/:id', auth, async (req, res) => {
       return res.status(404).json({ message: 'Report not found' });
     }
 
-    // Check if the report belongs to the user
-    if (report.user.toString() !== req.user.id) {
+    const requesterId = getEffectiveUserId(req);
+    // Check ownership
+    if (report.user.toString() !== requesterId) {
       return res.status(403).json({ message: 'Not authorized to access this report' });
     }
 
@@ -141,20 +158,23 @@ router.get('/reports/:id', auth, async (req, res) => {
 router.get('/reports/:id/status', auth, async (req, res) => {
   try {
     const report = await CIAReport.findById(req.params.id)
-      .select('status progress processingMetadata.errors');
+      // we need the user field to do an ownership check
+      .select('status progress currentPhase phaseProgress processingMetadata.errors user');
 
     if (!report) {
       return res.status(404).json({ message: 'Report not found' });
     }
 
-    // Check if the report belongs to the user
-    if (report.user.toString() !== req.user.id) {
+    // Verify the current user (or demo proxy user) owns this report
+    if (report.user.toString() !== getEffectiveUserId(req)) {
       return res.status(403).json({ message: 'Not authorized to access this report' });
     }
 
     res.json({
       status: report.status,
       progress: report.progress,
+      currentPhase: report.currentPhase ?? null,
+      phaseProgress: report.phaseProgress ?? null,
       errors: report.processingMetadata.errors || []
     });
   } catch (error) {
@@ -177,7 +197,7 @@ router.put('/reports/:id', auth, async (req, res) => {
     }
 
     // Check if the report belongs to the user
-    if (report.user.toString() !== req.user.id) {
+    if (report.user.toString() !== getEffectiveUserId(req)) {
       return res.status(403).json({ message: 'Not authorized to update this report' });
     }
 
@@ -232,7 +252,7 @@ router.delete('/reports/:id', auth, async (req, res) => {
     }
 
     // Check if the report belongs to the user
-    if (report.user.toString() !== req.user.id) {
+    if (report.user.toString() !== getEffectiveUserId(req)) {
       return res.status(403).json({ message: 'Not authorized to delete this report' });
     }
 
@@ -271,7 +291,7 @@ router.post(
       }
 
       // Check if the report belongs to the user
-      if (report.user.toString() !== req.user.id) {
+      if (report.user.toString() !== getEffectiveUserId(req)) {
         return res.status(403).json({ message: 'Not authorized to export this report' });
       }
 
@@ -325,7 +345,6 @@ router.post(
 );
 
 /**
-/**
  * @route   POST api/cia/reports/:id/run
  * @desc    Start or resume the full CIA workflow
  * @access  Private
@@ -336,7 +355,7 @@ router.post('/reports/:id/run', auth, async (req, res) => {
     if (!report) {
       return res.status(404).json({ message: 'Report not found' });
     }
-    if (report.user.toString() !== req.user.id) {
+    if (report.user.toString() !== getEffectiveUserId(req)) {
       return res.status(403).json({ message: 'Not authorized' });
     }
 
@@ -352,12 +371,10 @@ router.post('/reports/:id/run', auth, async (req, res) => {
     res.status(500).json({ message: 'Server error while starting workflow' });
   }
 });
+// ---------------------------------------------------------------------------
+// Trigger individual CIA phase (manual)
+// ---------------------------------------------------------------------------
 
-/**
- * @route   POST api/cia/reports/:id/phase/:phaseId
- * @desc    Trigger a single CIA phase manually
- * @access  Private
- */
 router.post('/reports/:id/phase/:phaseId', auth, async (req, res) => {
   try {
     const { id, phaseId } = req.params;
@@ -365,7 +382,7 @@ router.post('/reports/:id/phase/:phaseId', auth, async (req, res) => {
     if (!report) {
       return res.status(404).json({ message: 'Report not found' });
     }
-    if (report.user.toString() !== req.user.id) {
+    if (report.user.toString() !== getEffectiveUserId(req)) {
       return res.status(403).json({ message: 'Not authorized' });
     }
 
@@ -376,8 +393,9 @@ router.post('/reports/:id/phase/:phaseId', auth, async (req, res) => {
     res.status(500).json({ message: 'Server error while triggering phase', error: error.message });
   }
 });
-/**
- * Helper function to start the CIA analysis process
- * LEGACY HELPER REMOVED – workflow now handled by ciaWorkflowService
-async function startCIAAnalysisProcess(reportId) {
+
+// ---------------------------------------------------------------------------
+// Export router
+// ---------------------------------------------------------------------------
+
 module.exports = router;

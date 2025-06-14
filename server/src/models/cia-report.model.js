@@ -37,6 +37,20 @@ const ciaReportSchema = new Schema({
     enum: Object.values(REPORT_STATUS),
     default: REPORT_STATUS.INITIATED
   },
+  // Numeric index of the phase currently being processed (1-based, 0 when idle)
+  currentPhase: {
+    type: Number,
+    min: 0,
+    max: 6,
+    default: 0
+  },
+  // Fine-grained progress of the current phase (0-100)
+  phaseProgress: {
+    type: Number,
+    min: 0,
+    max: 100,
+    default: 0
+  },
   progress: {
     type: Number,
     min: 0,
@@ -524,10 +538,22 @@ ciaReportSchema.virtual('age').get(function() {
 });
 
 // Method to update report status
-ciaReportSchema.methods.updateStatus = function(status, progress = null) {
+ciaReportSchema.methods.updateStatus = function (
+  status,
+  progress = null,
+  currentPhase = null,
+  phaseProgress = null
+) {
   this.status = status;
   if (progress !== null) {
     this.progress = progress;
+  }
+  // Persist per-phase tracking if supplied
+  if (currentPhase !== null) {
+    this.currentPhase = currentPhase;
+  }
+  if (phaseProgress !== null) {
+    this.phaseProgress = phaseProgress;
   }
   
   // Update timestamps based on status

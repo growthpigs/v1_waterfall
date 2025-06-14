@@ -62,11 +62,12 @@ const PHASE_DEPENDENCIES = {
 
 // Phase Output Field Names (where to store each phase's output in the report)
 const PHASE_OUTPUT_FIELDS = {
-  [PHASES.BUSINESS_INTELLIGENCE]: 'businessIntelligence',
-  [PHASES.SEO_SOCIAL_INTELLIGENCE]: 'seoSocialIntelligence',
-  [PHASES.STRATEGIC_SYNTHESIS]: 'strategicSynthesis',
-  [PHASES.GOLDEN_HIPPO_OFFER]: 'goldenHippoOffer',
-  [PHASES.CONVERGENCE_BLENDER]: 'convergenceBlender',
+  // These keys must match the actual schema fields in cia-report.model.js
+  [PHASES.BUSINESS_INTELLIGENCE]: 'websiteAnalysis',
+  [PHASES.SEO_SOCIAL_INTELLIGENCE]: 'seoIntelligence',
+  [PHASES.STRATEGIC_SYNTHESIS]: 'marketResearch',
+  [PHASES.GOLDEN_HIPPO_OFFER]: 'socialProofAnalysis',
+  [PHASES.CONVERGENCE_BLENDER]: 'competitorAnalysis',
   [PHASES.MASTER_CONTENT_BIBLE]: 'masterContentBible'
 };
 
@@ -182,14 +183,48 @@ class CIAWorkflowService {
       const phase = allPhases[i];
       
       // Update report status for this phase
+      // 1-based phase number for client display (0 = idle)
+      const phaseNumber = i + 1;
+
       await report.updateStatus(
-        PHASE_STATUS_MAP[phase],
-        PHASE_PROGRESS_MAP[phase]
+        PHASE_STATUS_MAP[phase],   // overall workflow status
+        PHASE_PROGRESS_MAP[phase], // coarse overall progress %
+        phaseNumber,               // currentPhase for fine-grained tracking
+        0                          // reset per-phase progress to 0 at start
       );
+
+      // ------------------------------------------------------------
+      // Refresh the report from the database so that each subsequent
+      // phase operates on the *latest* data, including the output
+      // and completed flags that may have been written by the
+      // previous phase inside this same loop.  Without this refresh
+      // the in-memory `report` object can become stale, causing the
+      // dependency checker to incorrectly think required phases have
+      // not completed.
+      // ------------------------------------------------------------
+      report = await CIAReport.findById(report._id);
+      if (!report) {
+        throw new Error(
+          `Report ${report._id} could not be re-loaded during workflow processing`
+        );
+      }
       
       // Process the phase
       try {
         await this.processPhase(report, phase);
+
+        // ------------------------------------------------------------------
+        // Mark the *current* phase as fully completed (fine-grained tracker)
+        // before we move on.  This keeps the frontend phase bars in sync
+        // with the back-end even when the overall coarse progress (20, 40…)
+        // is unchanged.
+        // ------------------------------------------------------------------
+        await report.updateStatus(
+          PHASE_STATUS_MAP[phase],    // keep same coarse status
+          PHASE_PROGRESS_MAP[phase],  // keep same overall %
+          phaseNumber,                // still this phase
+          100                         // phaseProgress now complete
+        );
         
         // Short delay between phases to prevent rate limiting
         await sleep(1000);
@@ -271,9 +306,13 @@ class CIAWorkflowService {
     
     for (const dependency of dependencies) {
       const outputField = PHASE_OUTPUT_FIELDS[dependency];
-      
-      if (!report[outputField] || !report[outputField].completed) {
-        throw new Error(`Dependency not satisfied: ${dependency} must be completed before ${phase}`);
+
+      // Ensure the dependency phase has produced an output and is marked complete.
+      // Optional-chaining avoids TypeErrors when the field is undefined.
+      if (!report[outputField]?.completed) {
+        throw new Error(
+          `Dependency not satisfied: ${dependency} must be completed before ${phase}`
+        );
       }
     }
   }
@@ -303,48 +342,48 @@ class CIAWorkflowService {
     // Add outputs from previous phases as inputs to this phase
     switch (phase) {
       case PHASES.SEO_SOCIAL_INTELLIGENCE:
-        if (report.businessIntelligence) {
-          phaseInputs.businessIntelligence = report.businessIntelligence;
+        if (report.websiteAnalysis) {
+          phaseInputs.businessIntelligence = report.websiteAnalysis;
         }
         break;
         
       case PHASES.STRATEGIC_SYNTHESIS:
-        if (report.businessIntelligence) {
-          phaseInputs.businessIntelligence = report.businessIntelligence;
+        if (report.websiteAnalysis) {
+          phaseInputs.businessIntelligence = report.websiteAnalysis;
         }
-        if (report.seoSocialIntelligence) {
-          phaseInputs.seoSocialIntelligence = report.seoSocialIntelligence;
+        if (report.seoIntelligence) {
+          phaseInputs.seoSocialIntelligence = report.seoIntelligence;
         }
         break;
         
       case PHASES.GOLDEN_HIPPO_OFFER:
-        if (report.strategicSynthesis) {
-          phaseInputs.strategicSynthesis = report.strategicSynthesis;
+        if (report.marketResearch) {
+          phaseInputs.strategicSynthesis = report.marketResearch;
         }
         break;
         
       case PHASES.CONVERGENCE_BLENDER:
-        if (report.goldenHippoOffer) {
-          phaseInputs.goldenHippoOffer = report.goldenHippoOffer;
+        if (report.socialProofAnalysis) {
+          phaseInputs.goldenHippoOffer = report.socialProofAnalysis;
         }
         break;
         
       case PHASES.MASTER_CONTENT_BIBLE:
         // Master Content Bible needs all previous outputs
-        if (report.businessIntelligence) {
-          phaseInputs.businessIntelligence = report.businessIntelligence;
+        if (report.websiteAnalysis) {
+          phaseInputs.businessIntelligence = report.websiteAnalysis;
         }
-        if (report.seoSocialIntelligence) {
-          phaseInputs.seoSocialIntelligence = report.seoSocialIntelligence;
+        if (report.seoIntelligence) {
+          phaseInputs.seoSocialIntelligence = report.seoIntelligence;
         }
-        if (report.strategicSynthesis) {
-          phaseInputs.strategicSynthesis = report.strategicSynthesis;
+        if (report.marketResearch) {
+          phaseInputs.strategicSynthesis = report.marketResearch;
         }
-        if (report.goldenHippoOffer) {
-          phaseInputs.goldenHippoOffer = report.goldenHippoOffer;
+        if (report.socialProofAnalysis) {
+          phaseInputs.goldenHippoOffer = report.socialProofAnalysis;
         }
-        if (report.convergenceBlender) {
-          phaseInputs.convergenceBlender = report.convergenceBlender;
+        if (report.competitorAnalysis) {
+          phaseInputs.convergenceBlender = report.competitorAnalysis;
         }
         break;
     }
@@ -995,13 +1034,27 @@ class CIAWorkflowService {
       }
       
       // Update report status for this phase
+      // 1-based index of the selected phase for finer-grained tracking
+      const phaseNumber =
+        Object.values(PHASES).indexOf(phase) + 1;
+
       await report.updateStatus(
-        PHASE_STATUS_MAP[phase],
-        PHASE_PROGRESS_MAP[phase]
+        PHASE_STATUS_MAP[phase],    // coarse workflow status
+        PHASE_PROGRESS_MAP[phase],  // overall progress %
+        phaseNumber,                // currentPhase indicator
+        0                            // reset per-phase progress
       );
       
       // Process just this phase
       await this.processPhase(report, phase);
+
+      // Mark the individual phase as fully completed (phaseProgress = 100)
+      await report.updateStatus(
+        PHASE_STATUS_MAP[phase],    // keep same coarse status
+        PHASE_PROGRESS_MAP[phase],  // keep same overall %
+        phaseNumber,                // still this phase
+        100                          // phase completed
+      );
       
       return await CIAReport.findById(reportId);
     } catch (error) {
