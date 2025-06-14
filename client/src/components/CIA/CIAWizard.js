@@ -90,8 +90,13 @@ const CIAWizard = () => {
     
     if (!formData.websiteUrl.trim()) {
       newErrors.websiteUrl = "Website URL is required";
-    } else if (!/^(https?:\/\/)?([a-zA-Z0-9-]+\.)+[a-zA-Z0-9-]+(\/[a-zA-Z0-9-._~:/?#[\]@!$&'()*+,;=]*)?$/.test(formData.websiteUrl)) {
-      newErrors.websiteUrl = "Please enter a valid URL";
+    } else {
+      // Enhanced URL validation regex
+      // Checks for proper protocol, valid domain structure, and common TLDs
+      const urlRegex = /^(https?:\/\/)?(www\.)?([a-zA-Z0-9-]+\.)+[a-zA-Z]{2,}(\/[a-zA-Z0-9-._~:/?#[\]@!$&'()*+,;=]*)?$/;
+      if (!urlRegex.test(formData.websiteUrl)) {
+        newErrors.websiteUrl = "Please enter a valid URL (e.g., https://example.com)";
+      }
     }
     
     setErrors(newErrors);
@@ -115,7 +120,7 @@ const CIAWizard = () => {
         description: `CIA report for ${formData.companyName}`,
         initialData: {
           companyName: formData.companyName,
-          websiteUrl: formData.websiteUrl,
+          websiteUrl: formData.websiteUrl.startsWith('http') ? formData.websiteUrl : `https://${formData.websiteUrl}`,
           keyPersonOfInfluence: formData.keyPersonOfInfluence ? {
             name: formData.keyPersonOfInfluence,
             role: "Key Person of Influence"
@@ -146,7 +151,7 @@ const CIAWizard = () => {
     const pollInterval = setInterval(async () => {
       try {
         const response = await axios.get(`/cia/reports/${id}/status`);
-        const { status, progress, currentPhase, phaseProgress } = response.data;
+        const { status, progress, currentPhase, phaseProgress, errors: reportErrors } = response.data;
         
         setReportStatus(status);
         setReportProgress(progress);
@@ -159,6 +164,7 @@ const CIAWizard = () => {
             const updatedPhases = [...prev];
             const phaseIndex = currentPhase - 1;
             
+            // Update current phase
             if (!updatedPhases[phaseIndex]) {
               updatedPhases[phaseIndex] = {
                 id: currentPhase,
@@ -168,22 +174,12 @@ const CIAWizard = () => {
             } else {
               updatedPhases[phaseIndex] = {
                 ...updatedPhases[phaseIndex],
-                // keep the max between existing and new progress
-                progress: Math.max(
-                  updatedPhases[phaseIndex].progress || 0,
-                  phaseProgress || 0
-                ),
-                status:
-                  (phaseProgress ?? updatedPhases[phaseIndex].progress) >= 100
-                    ? "completed"
-                    : "processing"
+                progress: phaseProgress || 0,
+                status: phaseProgress >= 100 ? "completed" : "processing"
               };
             }
 
-            // -----------------------------------------------------------------
-            // Ensure *all previous* phases are marked as completed (100 %)
-            // so their bars don't remain stuck at 0 %.
-            // -----------------------------------------------------------------
+            // Mark all previous phases as completed
             for (let i = 0; i < phaseIndex; i++) {
               if (!updatedPhases[i]) {
                 updatedPhases[i] = {
@@ -200,6 +196,17 @@ const CIAWizard = () => {
               }
             }
             
+            // For failed reports, mark all subsequent phases as not started
+            if (status === "failed") {
+              for (let i = phaseIndex + 1; i < phases.length; i++) {
+                updatedPhases[i] = {
+                  id: i + 1,
+                  progress: 0,
+                  status: "pending"
+                };
+              }
+            }
+            
             return updatedPhases;
           });
         }
@@ -210,6 +217,11 @@ const CIAWizard = () => {
           
           if (status === "completed") {
             fetchReportResults(id);
+          } else if (status === "failed" && reportErrors && reportErrors.length > 0) {
+            // Display the error messages from the report
+            setErrors({
+              report: reportErrors.map(err => `${err.stage}: ${err.message}`).join(", ")
+            });
           }
         }
       } catch (error) {
@@ -233,6 +245,15 @@ const CIAWizard = () => {
         results: "Failed to fetch report results. Please try refreshing the page."
       });
     }
+  };
+
+  // Check if all phases are complete
+  const areAllPhasesComplete = () => {
+    // If we have fewer phase details than phases, some are missing
+    if (phaseDetails.length < phases.length) return false;
+    
+    // Check if all phases have 100% progress
+    return phaseDetails.every(phase => phase && phase.progress === 100);
   };
 
   // Export report
@@ -410,7 +431,7 @@ const CIAWizard = () => {
           {reportStatus === "completed"
             ? "Your comprehensive marketing intelligence report has been generated. You can now export it in various formats."
             : reportStatus === "failed"
-            ? "There was an error generating your report. Please try again or contact support."
+            ? "There was an error generating your report. Please check the error details below."
             : "Our AI is analyzing your company data across all 6 phases. This may take a few minutes."}
         </p>
       </div>
@@ -425,7 +446,8 @@ const CIAWizard = () => {
           <div
             className={cn(
               "h-2.5 rounded-full",
-              reportStatus === "completed" ? "bg-success" : "bg-primary"
+              reportStatus === "completed" ? "bg-success" : 
+              reportStatus === "failed" ? "bg-destructive" : "bg-primary"
             )}
             style={{ width: `${reportProgress}%` }}
           ></div>
@@ -437,7 +459,10 @@ const CIAWizard = () => {
         <h4 className="text-sm font-medium">CIA Workflow Phases</h4>
         
         {phases.map((phase, index) => {
-          const phaseDetail = phaseDetails[index] || { progress: 0, status: index === currentPhase - 1 ? "processing" : "pending" };
+          const phaseDetail = phaseDetails[index] || { 
+            progress: 0, 
+            status: index === currentPhase - 1 ? "processing" : "pending" 
+          };
           
           return (
             <div key={phase.id} className="space-y-1">
@@ -458,7 +483,8 @@ const CIAWizard = () => {
                 <div
                   className={cn(
                     "h-1.5 rounded-full",
-                    phaseDetail.status === "completed" ? "bg-success" : "bg-primary"
+                    phaseDetail.status === "completed" ? "bg-success" : 
+                    reportStatus === "failed" && index >= currentPhase ? "bg-muted" : "bg-primary"
                   )}
                   style={{ width: `${phaseDetail.progress}%` }}
                 ></div>
@@ -469,8 +495,38 @@ const CIAWizard = () => {
         })}
       </div>
       
-      {/* Export options (visible when completed) */}
-      {reportStatus === "completed" && (
+      {/* Error message (visible when failed) */}
+      {reportStatus === "failed" && (
+        <div className="p-4 bg-destructive/10 border border-destructive rounded-md">
+          <div className="flex items-start space-x-2">
+            <AlertCircle className="h-5 w-5 text-destructive mt-0.5" />
+            <div>
+              <h5 className="font-medium text-destructive">Report Generation Failed</h5>
+              <p className="text-sm text-muted-foreground mt-1">
+                {errors.report ? errors.report : "There was an error generating your CIA report. Please try again or contact support for assistance."}
+              </p>
+              <Button 
+                variant="outline" 
+                className="mt-4" 
+                onClick={() => {
+                  setIsSubmitted(false);
+                  setReportStatus("idle");
+                  setReportProgress(0);
+                  setCurrentPhase(0);
+                  setPhaseDetails([]);
+                  setReportResults(null);
+                  setErrors({});
+                }}
+              >
+                Try Again
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+      
+      {/* Export options (visible when completed AND all phases are at 100%) */}
+      {reportStatus === "completed" && areAllPhasesComplete() && (
         <div className="space-y-4 pt-4 border-t">
           <h4 className="text-sm font-medium">Export Options</h4>
           
@@ -550,36 +606,6 @@ const CIAWizard = () => {
             <p className="text-sm mt-4">
               For the complete report with all insights and recommendations, please use one of the export options above.
             </p>
-          </div>
-        </div>
-      )}
-      
-      {/* Error message (visible when failed) */}
-      {reportStatus === "failed" && (
-        <div className="p-4 bg-destructive/10 border border-destructive rounded-md">
-          <div className="flex items-start space-x-2">
-            <AlertCircle className="h-5 w-5 text-destructive mt-0.5" />
-            <div>
-              <h5 className="font-medium text-destructive">Report Generation Failed</h5>
-              <p className="text-sm text-muted-foreground mt-1">
-                There was an error generating your CIA report. Please try again or contact support for assistance.
-              </p>
-              <Button 
-                variant="outline" 
-                className="mt-4" 
-                onClick={() => {
-                  setIsSubmitted(false);
-                  setReportStatus("idle");
-                  setReportProgress(0);
-                  setCurrentPhase(0);
-                  setPhaseDetails([]);
-                  setReportResults(null);
-                  setErrors({});
-                }}
-              >
-                Try Again
-              </Button>
-            </div>
           </div>
         </div>
       )}

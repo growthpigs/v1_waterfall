@@ -231,7 +231,24 @@ class CIAWorkflowService {
       } catch (error) {
         console.error(`[CIAWorkflow] Error in phase ${phase} for report ${report._id}:`, error);
         await report.addError(phase, error.message);
-        await report.updateStatus('failed');
+        /* -----------------------------------------------------------------
+         * On failure we previously left the overall progress at the *next*
+         * phase’s coarse percentage (e.g. 100 % when the last phase fails).
+         * Roll progress back to the coarse % of the **last successfully
+         * completed** phase so the UI does not display 100 % with
+         * unfinished phase bars.
+         * ---------------------------------------------------------------- */
+        const prevPhaseIndex = i - 1;
+        const prevProgress =
+          prevPhaseIndex >= 0
+            ? PHASE_PROGRESS_MAP[allPhases[prevPhaseIndex]]
+            : 0;
+        await report.updateStatus(
+          'failed',
+          prevProgress,
+          phaseNumber, // keep pointer on the phase that failed
+          0            // phaseProgress = 0 because this phase failed
+        );
         throw error; // Stop the sequence if any phase fails
       }
     }
