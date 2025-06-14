@@ -85,6 +85,16 @@ app.get('/api/health', (req, res) => {
   res.status(200).json({ status: 'ok', message: 'Project Waterfall API is running' });
 });
 
+// ---------------------------------------------------------------------------
+// Serve generated export files (PDF, DOCX, etc.)
+// This works in all environments so the client can hit `/exports/...`
+// without additional Nginx or CDN configuration.
+// ---------------------------------------------------------------------------
+app.use(
+  '/exports',
+  express.static(path.join(__dirname, 'public', 'exports'))
+);
+
 // Serve static assets in production
 if (process.env.NODE_ENV === 'production') {
   app.use(express.static(path.join(__dirname, '../../client/build')));

@@ -182,7 +182,7 @@ const CIAWizard = () => {
 
             // -----------------------------------------------------------------
             // Ensure *all previous* phases are marked as completed (100 %)
-            // so their bars don’t remain stuck at 0 %.
+            // so their bars don't remain stuck at 0 %.
             // -----------------------------------------------------------------
             for (let i = 0; i < phaseIndex; i++) {
               if (!updatedPhases[i]) {
@@ -241,26 +241,65 @@ const CIAWizard = () => {
     setExportError(null);
     
     try {
+      console.log(`Starting export for format: ${format}, reportId: ${reportId}`);
+      
       const response = await axios.post(`/cia/reports/${reportId}/export`, {
         format
       });
       
+      if (!response.data || !response.data.exportUrl) {
+        throw new Error(`Export response missing URL for ${format} format`);
+      }
+      
+      console.log(`Export successful, received URL: ${response.data.exportUrl}`);
+      
+      // Construct the full URL if it's a relative path
+      let fullUrl = response.data.exportUrl;
+      if (fullUrl.startsWith('/')) {
+        // Get the base URL from the current window location
+        const baseUrl = `${window.location.protocol}//${window.location.host}`;
+        fullUrl = `${baseUrl}${fullUrl}`;
+        console.log(`Constructed full URL: ${fullUrl}`);
+      }
+      
       // Handle different export formats
       if (format === "pdf") {
         // For PDF, create a download link
+        console.log(`Creating download link for PDF: ${fullUrl}`);
         const link = document.createElement("a");
-        link.href = response.data.exportUrl;
+        link.href = fullUrl;
         link.download = `${formData.companyName}_CIA_Report.pdf`;
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
       } else {
         // For other formats, open in new tab
-        window.open(response.data.exportUrl, "_blank");
+        console.log(`Opening URL in new tab: ${fullUrl}`);
+        window.open(fullUrl, "_blank");
       }
     } catch (error) {
       console.error(`Error exporting report as ${format}:`, error);
-      setExportError(`Failed to export as ${format}. ${error.response?.data?.message || "Please try again."}`);
+      
+      // Provide more detailed error information
+      let errorMessage = `Failed to export as ${format}. `;
+      
+      if (error.response) {
+        // The request was made and the server responded with a status code
+        // that falls out of the range of 2xx
+        const statusCode = error.response.status;
+        const serverMessage = error.response.data?.message || 'Unknown server error';
+        
+        errorMessage += `Server responded with status ${statusCode}: ${serverMessage}`;
+        console.error('Export error response:', error.response.data);
+      } else if (error.request) {
+        // The request was made but no response was received
+        errorMessage += 'No response received from server. Please check your connection.';
+      } else {
+        // Something happened in setting up the request that triggered an Error
+        errorMessage += error.message || 'Unknown error occurred';
+      }
+      
+      setExportError(errorMessage);
     } finally {
       setExportLoading(prev => ({ ...prev, [format]: false }));
     }

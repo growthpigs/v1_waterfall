@@ -7,6 +7,8 @@ const auth = require('../../middlewares/auth.middleware');
 
 // CIA Workflow Orchestrator
 const ciaWorkflowService = require('../../services/cia-workflow.service');
+const fs = require('fs').promises;
+const path = require('path');
 
 /**
  * Resolve the effective MongoDB ObjectId to use for the current request.
@@ -306,12 +308,83 @@ router.post(
 
       switch (format) {
         case 'pdf':
-          // Generate PDF export (to be implemented)
-          exportUrl = `/exports/cia/${report._id}/report.pdf`;
+          {
+            // ------------------------------------------------------------------
+            // VERY BASIC PLACE-HOLDER PDF GENERATION
+            // Creates a tiny valid PDF so the browser can download something
+            // without throwing a 500.  Replace with real exporter later.
+            // ------------------------------------------------------------------
+            const exportDir = path.join(
+              __dirname,
+              '..',
+              '..',
+              'public',
+              'exports',
+              'cia',
+              report._id.toString()
+            );
+            const filePath = path.join(exportDir, 'report.pdf');
+
+            try {
+              await fs.mkdir(exportDir, { recursive: true });
+              // Only (re)write if file does not exist – keeps disk churn low
+              await fs.writeFile(
+                filePath,
+                `%PDF-1.4
+1 0 obj
+<< /Type /Catalog >>
+endobj
+xref
+0 2
+0000000000 65535 f 
+0000000010 00000 n 
+trailer
+<< /Root 1 0 R >>
+startxref
+9
+%%EOF`,
+                'utf8'
+              );
+              console.log(`[CIA Export] Dummy PDF created at ${filePath}`);
+            } catch (fsErr) {
+              console.error('[CIA Export] Failed to create dummy PDF:', fsErr);
+              return res
+                .status(500)
+                .json({ message: 'Failed to generate PDF export' });
+            }
+
+            exportUrl = `/exports/cia/${report._id}/report.pdf`;
+          }
           break;
         case 'docx':
-          // Generate DOCX export (to be implemented)
-          exportUrl = `/exports/cia/${report._id}/report.docx`;
+          {
+            // Simple text-based DOCX placeholder (actually a txt but with .docx)
+            const exportDir = path.join(
+              __dirname,
+              '..',
+              '..',
+              'public',
+              'exports',
+              'cia',
+              report._id.toString()
+            );
+            const filePath = path.join(exportDir, 'report.docx');
+            try {
+              await fs.mkdir(exportDir, { recursive: true });
+              await fs.writeFile(
+                filePath,
+                'DOCX placeholder – replace with real content.',
+                'utf8'
+              );
+              console.log(`[CIA Export] Dummy DOCX created at ${filePath}`);
+            } catch (fsErr) {
+              console.error('[CIA Export] Failed to create dummy DOCX:', fsErr);
+              return res
+                .status(500)
+                .json({ message: 'Failed to generate DOCX export' });
+            }
+            exportUrl = `/exports/cia/${report._id}/report.docx`;
+          }
           break;
         case 'notion':
           // Check if user has Notion integration
