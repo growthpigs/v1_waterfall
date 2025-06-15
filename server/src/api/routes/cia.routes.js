@@ -20,6 +20,27 @@ const getEffectiveUserId = (req) =>
   req.user?.id === 'demo-user-123' ? DEMO_OBJECT_ID : req.user.id;
 
 /**
+ * Safely convert arbitrary input (array / object / primitive) into a string.
+ * Mongo schema for several `initialData` properties expects `String`, but the
+ * frontend may submit richer structures.  This helper ensures whatever comes
+ * in is persisted as a string, preventing CastErrors.
+ *
+ * @param {*} val  Incoming value from request
+ * @returns {String}
+ */
+const normalizeToString = (val) => {
+  if (val === undefined || val === null) return '';
+  if (Array.isArray(val)) {
+    // Filter out empty entries then join with comma-space for readability
+    return val.filter(Boolean).join(', ');
+  }
+  if (typeof val === 'object') {
+    return JSON.stringify(val);
+  }
+  return String(val);
+};
+
+/**
  * @route   POST api/cia/reports
  * @desc    Create a new CIA report (start the wizard)
  * @access  Private (requires Basic subscription or higher)
@@ -41,20 +62,24 @@ router.post(
     }
 
     try {
+      // Normalise potentially complex fields to strings to satisfy schema
+      const body = req.body;
+      const init = body.initialData || {};
+
       // Create new report
       const newReport = new CIAReport({
         user: getEffectiveUserId(req),
-        name: req.body.name,
-        description: req.body.description,
+        name: body.name,
+        description: body.description,
         initialData: {
-          companyName: req.body.initialData.companyName,
-          websiteUrl: req.body.initialData.websiteUrl,
-          keyPersonOfInfluence: req.body.initialData.keyPersonOfInfluence || {},
-          industry: req.body.initialData.industry,
-          targetAudience: req.body.initialData.targetAudience || [],
-          businessGoals: req.body.initialData.businessGoals || [],
-          contentGoals: req.body.initialData.contentGoals || [],
-          brandVoice: req.body.initialData.brandVoice || {}
+          companyName: init.companyName,
+          websiteUrl: init.websiteUrl,
+          keyPersonOfInfluence: init.keyPersonOfInfluence || {},
+          industry: init.industry,
+          targetAudience: normalizeToString(init.targetAudience),
+          businessGoals: normalizeToString(init.businessGoals),
+          contentGoals: normalizeToString(init.contentGoals),
+          brandVoice: normalizeToString(init.brandVoice)
         },
         status: 'initiated',
         progress: 0,
