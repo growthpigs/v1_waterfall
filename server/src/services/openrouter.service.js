@@ -54,20 +54,33 @@ class OpenRouterService {
   constructor() {
     this.apiKey = process.env.OPENROUTER_API_KEY;
     this.baseUrl = process.env.OPENROUTER_BASE_URL || 'https://openrouter.ai/api';
-    
-    if (!this.apiKey) {
-      throw new Error('OpenRouter API key is not configured. Please set OPENROUTER_API_KEY in environment variables.');
+    /**
+     * Service health flag.
+     * If `false`, the service is effectively disabled but the
+     * application can still start; callers will receive a clear
+     * runtime error when they attempt to invoke the API.
+     */
+    this.isConfigured = Boolean(this.apiKey);
+
+    if (!this.isConfigured) {
+      // Don't throw here—let the app boot and fail lazily with a clear message.
+      console.warn(
+        '[OpenRouter] OPENROUTER_API_KEY is not set: OpenRouter service is DISABLED.'
+      );
+      return;
     }
-    
+
     // Initialize axios instance with default configuration
     this.client = axios.create({
       baseURL: this.baseUrl,
       timeout: DEFAULT_TIMEOUT,
       headers: {
-        'Authorization': `Bearer ${this.apiKey}`,
+        Authorization: `Bearer ${this.apiKey}`,
         'Content-Type': 'application/json',
-        'HTTP-Referer': process.env.FRONTEND_URL || 'http://localhost:3000', // Required by OpenRouter
-        'X-Title': 'Operation Waterfall - CIA Workflow' // Helpful for OpenRouter analytics
+        // Required by OpenRouter
+        'HTTP-Referer': process.env.FRONTEND_URL || 'http://localhost:3000',
+        // Helpful for OpenRouter analytics
+        'X-Title': 'Operation Waterfall - CIA Workflow'
       }
     });
   }
@@ -97,6 +110,12 @@ class OpenRouterService {
       stream = false,
       jsonMode = false
     } = options;
+
+    if (!this.isConfigured) {
+      throw new Error(
+        'OpenRouter service is not configured (missing OPENROUTER_API_KEY).'
+      );
+    }
 
     const payload = {
       model,

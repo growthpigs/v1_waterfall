@@ -75,6 +75,57 @@ class CIAWorkflowService {
   constructor() {
     // Initialize prompt manager when service is created
     this.initializePromptManager();
+    // Determine mock (dev-mode) behaviour once at construction
+    this._mockMode =
+      process.env.MOCK_AI === 'true' ||
+      (!openRouterService.isConfigured &&
+        (process.env.NODE_ENV || 'development') !== 'production');
+    if (this._mockMode) {
+      console.warn(
+        '[CIAWorkflow] Running in MOCK AI mode – external AI calls will be stubbed'
+      );
+    }
+  }
+
+  /**
+   * Helper: returns TRUE when the workflow should use mock AI responses.
+   */
+  isMockMode() {
+    return this._mockMode;
+  }
+
+  /**
+   * Helper: generate a very small placeholder analysis object
+   * so that downstream UI/data expectations are satisfied.
+   */
+  _mockAnalysis(phase, inputs = {}) {
+    return {
+      phase,
+      mock: true,
+      summary: `Mock analysis for ${phase}`,
+      generatedAt: new Date().toISOString(),
+      inputs
+    };
+  }
+
+  /**
+   * Helper: centralised AI-call wrapper that automatically falls back
+   * to a mock response when running in mock mode.
+   */
+  async _callAI(phase, userPrompt, systemPrompt, options = {}) {
+    if (this.isMockMode()) {
+      return {
+        content: JSON.stringify(this._mockAnalysis(phase)),
+        model: 'mock',
+        usage: { total_tokens: 0 }
+      };
+    }
+
+    // Normal live-API path
+    return openRouterService.processPrompt(userPrompt, systemPrompt, {
+      phase,
+      ...options
+    });
   }
 
   /**
