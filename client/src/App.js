@@ -96,6 +96,7 @@ const UserMenu = styled.div`
     border-radius: ${props => props.theme.borderRadius};
     cursor: pointer;
     transition: background 0.3s ease;
+    margin-right: 0.5rem; /* allow buttons to sit side-by-side */
     
     &:hover {
       background: rgba(255, 255, 255, 0.2);
@@ -280,6 +281,24 @@ function App() {
     window.addEventListener('message', handleMessage, false);
   };
 
+  // Demo login handler – sets a fake user for local testing
+  const demoLogin = () => {
+    const demoUser = {
+      id: 'demo-user-123',
+      email: 'demo@waterfall.dev',
+      firstName: 'Demo',
+      lastName: 'User',
+      fullName: 'Demo User',
+      subscription: 'pro',
+      role: 'user',
+    };
+    setUser(demoUser);
+    setIsAuthenticated(true);
+    // Persist in localStorage to mimic real login
+    localStorage.setItem('token', 'demo-token');
+    localStorage.setItem('refreshToken', 'demo-refresh-token');
+  };
+
   const logout = () => {
     localStorage.removeItem('token');
     localStorage.removeItem('refreshToken');
@@ -305,7 +324,10 @@ function App() {
               {isAuthenticated ? (
                 <button onClick={logout}>Sign Out</button>
               ) : (
-                <button onClick={signInWithGoogle}>Sign in with Google</button>
+                <>
+                  <button onClick={signInWithGoogle}>Sign in with Google</button>
+                  <button onClick={demoLogin}>Demo Login</button>
+                </>
               )}
             </UserMenu>
           </Header>

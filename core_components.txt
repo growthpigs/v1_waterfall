@@ -1,0 +1,203 @@
+## 3. Core Components
+
+Project Waterfall consists of several interconnected components that work together to provide a comprehensive marketing intelligence platform.
+
+### CIA (Colossal Intelligence Arsenal)
+
+The CIA is the foundational component of Project Waterfall, responsible for gathering, processing, and analyzing data from various sources to create the "Master Content Bible."
+
+#### Key Features
+
+- **Initial Data Collection**: Wizard-based interface for collecting company name, website URL, and Key Person of Influence (KPOI)
+- **Website Analysis**: Automated extraction of content, messaging, branding, and technical elements
+- **Competitor Analysis**: Identification and analysis of direct and indirect competitors
+- **SEO Intelligence**: Comprehensive keyword research, gap analysis, and opportunity identification
+- **Market Research**: Industry trends, audience insights, and market positioning
+- **Social Proof Analysis**: Testimonial extraction, sentiment analysis, and theme identification
+- **Master Content Bible Generation**: Comprehensive document containing all gathered intelligence
+
+#### Technical Implementation
+
+- **Data Collection Service**: Handles the wizard interface and initial data gathering
+- **Analysis Pipeline**: Processes raw data through various analytical modules
+- **Integration Layer**: Connects to DataForSEO, Google Trends, and other data sources
+- **Visualization Engine**: Transforms analytical results into visual representations
+- **Export System**: Generates downloadable reports in various formats
+
+### Cartwheel Bundle
+
+The Cartwheel Bundle is a collection of content generation tools that leverage the data from the CIA to continuously produce optimized content across multiple platforms and formats.
+
+#### Content Types (Military Classification)
+
+1. **Blog Content & Articles**
+   - SNIPER: Long-form articles (precision-targeted, high-impact content)
+   - RECON: Research articles (intelligence-gathering content)
+   - PHANTOM: Pillar content (comprehensive cornerstone content)
+   - BLACKOUT: Authority pieces (thought leadership content)
+   - INTEL: Industry insights (market analysis reports)
+   - OVERWATCH: Trend analysis (timely content on emerging trends)
+   - CLASSIFIED: Exclusive content (premium subscriber content)
+   - BRIEFING: Summary articles (concise overviews)
+
+2. **Social Media Operations**
+   - VIPER: Instagram posts (visual content with impact)
+   - GHOST: Facebook content (engagement-focused posts)
+   - TANGO: LinkedIn posts (professional networking content)
+   - ECHO: Twitter/X posts (concise, shareable messages)
+   - BRAVO: TikTok content (short-form video content)
+   - DELTA: YouTube Shorts (brief video content)
+   - FOXTROT: Pinterest posts (visual discovery content)
+   - SIERRA: Snapchat content (ephemeral content)
+
+3. **Video Content Arsenal**
+   - APACHE: Brand videos (promotional content)
+   - STEALTH: UGC videos (user-generated content)
+   - PREDATOR: Video ads (targeted advertising)
+   - BLACKHAWK: Testimonial videos (customer success stories)
+   - COBRA: Product demos (feature demonstrations)
+   - FALCON: Educational videos (informative content)
+   - RAPTOR: Tutorial videos (instructional content)
+   - HAWK: Behind-the-scenes (company culture content)
+
+4. **Email & Communication**
+   - CIPHER: Newsletters (regular subscriber communications)
+   - WHISKEY: Email campaigns (targeted email sequences)
+   - RADIO: Automated sequences (drip campaigns)
+   - ALPHA: Welcome series (onboarding communications)
+   - OSCAR: Promotional emails (sales communications)
+   - UNIFORM: Template emails (standardized communications)
+   - VICTOR: Victory emails (achievement announcements)
+   - YANKEE: Announcement emails (important updates)
+
+5. **Landing Pages & Web Operations**
+   - FORTRESS: Landing pages (conversion-focused pages)
+   - STRONGHOLD: Sales pages (revenue-generating pages)
+   - BUNKER: Lead magnets (prospect-capturing resources)
+   - OUTPOST: Thank you pages (post-conversion pages)
+   - CHECKPOINT: Opt-in pages (subscriber acquisition pages)
+   - BARRICADE: Squeeze pages (focused conversion pages)
+   - WATCHTOWER: About pages (company information pages)
+   - COMMAND: Homepage (main website entry point)
+
+6. **Podcast & Audio Intelligence**
+   - RADIO SILENCE: Podcast episodes (audio content series)
+   - TRANSMISSION: Audio ads (audio promotional content)
+   - FREQUENCY: Voice content (voice-optimized content)
+   - SIGNAL: Audio announcements (important audio updates)
+   - BEACON: Audio guides (instructional audio content)
+   - SONAR: Interview shows (conversation-based content)
+   - RADAR: News podcasts (current events coverage)
+
+7. **Special Operations Content**
+   - BLACK OPS: Confidential reports (exclusive analysis)
+   - NIGHT VISION: Dark social content (private sharing content)
+   - INFILTRATE: Competitor analysis (competitive intelligence)
+   - EXTRACTION: Data reports (insights from raw data)
+   - SABOTAGE: Disruptive content (industry-challenging content)
+   - AMBUSH: Surprise launches (unexpected content releases)
+   - FLANKING: Alternative perspective content (unique viewpoints)
+   - SIEGE: Long-term campaigns (sustained content pressure)
+
+8. **Advanced Tactical Classifications**
+   - GUNSHIP: Multi-format campaigns (cross-platform content)
+   - SNATCH: Lead capture content (prospect acquisition content)
+   - THUNDER: Viral content attempts (high-sharing potential content)
+   - LIGHTNING: Rapid response content (timely reactive content)
+   - TORNADO: Trending topic content (current events content)
+   - HURRICANE: Major announcement content (significant updates)
+   - EARTHQUAKE: Industry-shaking content (disruptive revelations)
+   - AVALANCHE: Overwhelming content series (massive content deployment)
+
+#### Technical Implementation
+
+- **Content Generation Pipeline**: Processes CIA data through proprietary prompts
+- **Format Adapters**: Transforms core content into platform-specific formats
+- **Publishing System**: Schedules and distributes content across channels
+- **Performance Tracking**: Monitors content effectiveness and engagement
+- **Iteration Engine**: Refines content based on performance data
+
+### Clarity Board
+
+The Clarity Board is a lightweight, free version of the CIA that provides basic marketing intelligence to new users.
+
+#### Key Features
+
+- **Simplified Data Collection**: Basic company and audience information
+- **Limited Analysis**: Core insights without the depth of full CIA
+- **Sample Reports**: Preview of the types of intelligence available
+- **Upgrade Path**: Clear pathway to full CIA functionality
+- **Usage Limits**: Restricted number of free uses (e.g., 5 times)
+
+#### Technical Implementation
+
+- **Streamlined Pipeline**: Simplified version of CIA data processing
+- **Feature Restrictions**: Limited access to advanced features
+- **Usage Tracking**: System to monitor and limit free usage
+- **Conversion Funnel**: Optimized pathway to paid services
+
+### Convergence Blender
+
+The Convergence Blender is a proprietary system that combines different time-horizon data to identify optimal content opportunities.
+
+#### Data Sources
+
+- **Long-Term Data**: Google Trends and historical patterns (trend data)
+- **Mid-Term Data**: DataForSEO intelligence on keywords, rankings, and competition (SEO data)
+- **Short-Term Data**: X.com, TikTok, and other social platforms for viral content (viral data)
+
+#### Blending Process
+
+1. **Data Collection**: Gather data from all three time horizons
+2. **Pattern Identification**: Identify common themes across time horizons
+3. **Opportunity Scoring**: Rank opportunities based on consistency across sources
+4. **Content Recommendation**: Suggest optimal content topics and formats
+5. **Implementation Planning**: Create actionable content plans
+
+#### Technical Implementation
+
+- **Data Integration Layer**: Connects to various data sources
+- **Analysis Engine**: Processes and correlates data across time horizons
+- **Scoring Algorithm**: Ranks opportunities based on multiple factors
+- **Recommendation System**: Generates actionable content suggestions
+- **Visualization Interface**: Presents findings in an intuitive format
+
+### Prompt Library
+
+The Prompt Library is a collection of proprietary marketing-focused prompts that elevate AI-generated content beyond basic templates.
+
+#### Prompt Categories
+
+- **Style-Based Prompts**: Different writing styles (Hormozi, Frank Kern, etc.)
+- **Format-Based Prompts**: Specific content formats (blogs, social posts, etc.)
+- **Purpose-Based Prompts**: Different content goals (educate, sell, engage, etc.)
+- **Platform-Based Prompts**: Optimized for specific platforms (LinkedIn, TikTok, etc.)
+- **Audience-Based Prompts**: Tailored to different audience segments
+
+#### Technical Implementation
+
+- **Prompt Management System**: Organizes and categorizes prompts
+- **Context Injection**: Incorporates CIA data into prompts
+- **Performance Tracking**: Monitors and optimizes prompt effectiveness
+- **Version Control**: Manages prompt iterations and improvements
+- **User Customization**: Allows for prompt adaptation and personalization
+
+### BuildFast Notion Integration
+
+The BuildFast Notion Integration enables seamless output of content to Notion for use with BuildFast.
+
+#### Key Features
+
+- **Automated Export**: Direct export of content to specified Notion folders
+- **Format Preservation**: Maintains formatting and structure in Notion
+- **Metadata Tagging**: Includes relevant metadata for organization
+- **Version Control**: Manages content updates and revisions
+- **Workflow Integration**: Fits into existing BuildFast workflows
+
+#### Technical Implementation
+
+- **Notion API Integration**: Connects to Notion workspace
+- **Format Converter**: Transforms content to Notion-compatible format
+- **Folder Management**: Organizes content in appropriate Notion folders
+- **Error Handling**: Manages connection issues and retry logic
+- **User Configuration**: Allows customization of export settings

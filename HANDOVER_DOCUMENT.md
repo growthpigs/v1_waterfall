@@ -1,133 +1,159 @@
-# Operation Waterfall – Handover Document  
+# Project Waterfall – CIA Workflow  
+**Handover Document**  
 _Date: 2025-06-13_
 
-## 1. Session Overview
-This session focused on delivering two milestone features and aligning the codebase with the official design system:
+---
 
-* **CIA Wizard** – a production-ready multi-step form for gathering company intelligence.
-* **Ops Credits System** – a flexible, admin-configurable credit framework that powers pay-as-you-go operations.
+## 1 · Executive Summary
+All six phases of the Colossal Intelligence Arsenal (CIA) workflow now run end-to-end using:
 
-All work lives on branch **`waterfall-implementation`** (pushed).  
-A draft Pull Request should be opened against `main`.
+* React front-end (Next session: performance tuning)
+* Node/Express back-end on **port 5001**
+* MongoDB on **27017**
+* Prompt-driven AI pipeline (Claude-3-Opus via OpenRouter)
+* DataForSEO service (mock or live, toggle via `.env`)
+* Real-time progress polling in the UI
+
+The wizard successfully creates a report, the server auto-starts the workflow, and progress updates to **100 %**. Export stubs are in place (PDF, Sheets, Notion).
 
 ---
 
-## 2. Key Features Delivered
+## 2 · Current Status  
+Screenshot shows 90 % overall progress (phase 5 running). Local retest confirms full completion.  
+Key confirmation points:
 
-### 2.1 CIA Wizard
-| Aspect | Details |
-|--------|---------|
-| Location | `client/src/components/CIA/CIAWizard.js` |
-| Steps | Company → Website → Keywords → Competitors → Audience → Goals → Review |
-| UX Highlights | Tailwind + shadcn/ui cards, progress bar, Lucide icons, validation, credit cost display |
-| Integration Points | Hits future endpoints for SEO/analysis (placeholders), consumes Ops Credits total for cost preview |
-
-### 2.2 Ops Credits System
-| Layer | Implementation |
-|-------|----------------|
-| **DB Models** | `server/src/models/ops-credit.model.js` (OperationCost, CreditPackage, CreditTransaction, UserCreditBalance) |
-| **Service Layer** | `server/src/services/credits.service.js` – full CRUD, purchase flow, usage, balance check |
-| **API Routes** | `server/src/api/routes/credits.routes.js` mounted at `/api/credits` |
-| **Admin UI** | `client/src/components/OpsCreditSystem/AdminCreditControls.js` – manage pricing & packages |
-| **User UI** | `CreditDisplay.js` (balance + history) & `CreditPurchaseForm.js` (package purchase, coupons) |
-| **Bootstrapping** | Inserts default ops costs & packages if collection empty (run on server start). |
+| Component                | State | Notes                                       |
+|--------------------------|-------|---------------------------------------------|
+| Front-end (React)        | ✅    | Running on **http://localhost:3000**        |
+| Back-end API             | ✅    | `http://localhost:5001/api`                 |
+| Authentication           | ✅    | Demo token; Google OAuth placeholder        |
+| 6 -Phase Workflow        | ✅    | Executes automatically after report create  |
+| Prompts (markdown)       | ✅    | 18 files loaded (system + user per phase)   |
+| Ownership / Auth checks  | ✅    | Fixed for demo user                         |
 
 ---
 
-## 3. Codebase Changes
-
-### Backend
-* **`server/src/models/ops-credit.model.js`** – new schema definitions + defaults initializer.
-* **`server/src/services/credits.service.js`** – central business logic.
-* **`server/src/api/routes/credits.routes.js`** – public & admin endpoints.
-* **`server/src/index.js`** – added `app.use('/api/credits', ...)`.
-* **`user.model.js`** – fixed `Schema.Types.Mixed` bug.
-* Installed missing libs: `express-validator`, `cheerio`.
-
-### Frontend
-* **Tailwind CSS**  
-  * Added `tailwind.config.js`, `postcss.config.js`, `src/styles/globals.css`.
-* **shadcn/ui infrastructure** (`button`, `input`, `label`, `card`, utility `cn`).
-* **CIA Wizard component** (see §2.1).
-* **Ops Credits components** (display, purchase, admin controls).
-* **Routing updates** in `client/src/App.js` for `CIA` and `Credits`.
-
-### Tooling & Config
-* Added Tailwind/clsx/class-variance-authority, Radix primitives, Lucide React icons.
-* `client/package.json` updated with all new deps & Tailwind scripts.
-* Global proxy in CRA points to `localhost:5000` for API.
+## 3 · Accomplishments This Session
+1. Fixed double-`/api` bug in front-end Axios paths.  
+2. Implemented demo-user bypass through `auth.middleware.js`.  
+3. Mapped phase output fields to real schema (`PHASE_OUTPUT_FIELDS`).  
+4. Added missing **user** prompt files:  
+   * `golden-hippo-offer-user.md`  
+   * `convergence-blender-user.md`  
+   * `master-content-bible-user.md`  
+5. Resolved race condition – reload report before each phase.  
+6. Removed duplicate `/run` call from **CIAWizard.js**.  
+7. Patched all ownership checks to accept demo ObjectId.  
+8. Verified full 0 → 100 % execution via API and UI.  
 
 ---
 
-## 4. Dependencies Added
-
-Frontend (`client`):
-```
-tailwindcss postcss autoprefixer tailwindcss-animate
-clsx class-variance-authority tailwind-merge
-lucide-react
-@radix-ui/react-* (slot, dialog, label, checkbox, select, toast, progress)
-```
-
-Backend (`server`):
-```
-express-validator cheerio
-```
+## 4 · Known Issues & Immediate Next Priorities
+| Priority | Issue | Notes |
+|----------|-------|-------|
+| HIGH | **Performance** – Each phase takes ~30-60 s. | Move AI + DataForSEO calls to background queue, enable streaming responses, add caching. |
+| HIGH | Front-end still loads missing icons (`logo192.png`, `favicon.ico`). | Pure cosmetic. |
+| MED  | DataForSEO 404 when no credentials. | Provide real creds or tighten mock path. |
+| MED | Export endpoints are placeholders. | Implement PDF (Puppeteer), Sheets API, Notion API. |
+| LOW | React Router v7 deprecation warnings. | Opt-in future flags or upgrade later. |
 
 ---
 
-## 5. Current State & How to Run
+## 5 · Technical Implementation Details
 
+### Architecture
+* **client/** – React 18 + Vite + Tailwind (shadcn/ui components)
+* **server/** – Node 20, Express 4, MongoDB (Mongoose)
+* **docs/cia-workflow/prompts/** – 18 markdown prompts (phase × type)
+* **services/**
+  * `cia-workflow.service.js` – orchestrator
+  * `openrouter.service.js` – AI gateway
+  * `prompt-manager.service.js` – loads + caches prompts
+  * `dataforseo.service.js` – SEO data (live/mock)
+* **middlewares/**
+  * `auth.middleware.js` – JWT + demo shortcut
+* **models/**
+  * `cia-report.model.js` – large schema (phase outputs)
+
+### Key Endpoints
 ```
-# root
-npm run install-all      # installs client & server deps
-npm run dev              # concurrent CRA (port 3000) & API (port 5000)
+POST /api/cia/reports            # create + auto-start
+GET  /api/cia/reports/:id/status # poll progress
+POST /api/cia/reports/:id/export # pdf / sheets / notion
 ```
 
-* MongoDB must be running & `MONGO_URI` set in `.env`.
-* Default Ops Credits data seeds automatically after server connects.
-* Navigate to:
-  * `http://localhost:3000/cia` → CIA Wizard
-  * `http://localhost:3000/credits` → Credits dashboard
-  * `http://localhost:3000/admin/credits` (when routed) → Admin controls
+### Environment (.env.example)
+```
+PORT=5001
+MONGODB_URI=mongodb://localhost:27017/waterfall
+OPENROUTER_API_KEY=...
+DATAFORSEO_LOGIN=... (set to use live data)
+```
 
 ---
 
-## 6. Recommended Next Steps
-
-1. **Finish Pull Request**
-   * Open PR from `waterfall-implementation` → `main`.
-2. **CI/CD**
-   * Add GitHub Action lint/test, skip `node_modules` to avoid huge diff.
-3. **DataForSEO Integration**
-   * Wire `keywords` & `competitor` steps to real API via backend service.
-4. **Subscription × Credits**
-   * Allocate monthly credits on subscription renewal (`subscription_allocation` type tx).
-5. **Unit & E2E Tests**
-   * Jest tests for Credits service, React Testing Library for Wizard.
-6. **Performance**
-   * Consider switching CRA → Vite/Next.js later; current CRA large bundle.
-7. **Design Polish**
-   * Replace residual styled-components with pure Tailwind; audit colors.
+## 6 · Key Files & Locations
+| Path | Purpose |
+|------|---------|
+| `client/src/components/CIA/CIAWizard.js` | Wizard UI & polling logic |
+| `client/src/utils/axios.js` | Axios instance (`baseURL = http://localhost:5001/api`) |
+| `server/src/api/routes/cia.routes.js` | All CIA endpoints |
+| `server/src/services/cia-workflow.service.js` | Phase orchestration |
+| `server/src/services/prompt-manager.service.js` | Prompt loader |
+| `docs/cia-workflow/prompts/*.md` | System & user prompts |
+| `server/.env` | API keys, toggles |
 
 ---
 
-## 7. Known Issues / Follow-ups
-
-* Large `node_modules` committed; recommend `.gitignore` or Git LFS for >50 MB artifacts.
-* GitHub CLI (`gh`) not installed locally → PR creation failed via script.
-* Tailwind CLI not globally available; we created config manually—verify build scripts.
-* Coupon validation endpoint assumed (`/api/coupons/validate`) but not yet built.
-
----
-
-## 8. Branch & PR Info
-
-| Branch | Status |
-|--------|--------|
-| `waterfall-implementation` | Contains all features above (latest commit `92233193`) |
-| PR | **Draft** – create via GitHub UI |
+## 7 · Performance Optimisation Roadmap (Main Concern)
+1. **Async / Job Queue**  
+   * Off-load `cia-workflow.service.startWorkflow()` to BullMQ / Agenda.  
+2. **Streaming AI Responses**  
+   * Use `openrouterService.processPromptStream()` with SSE/WebSocket to update progress live instead of polling.  
+3. **Parallelisable Phases**  
+   * Phases 4–5 could run in parallel if dependencies allow; measure impact.  
+4. **Prompt Caching**  
+   * Prompts already cached; add Redis layer for AI outputs to avoid re-runs.  
+5. **Reduce Tokens / Temperature**  
+   * Tune Claude model params to minimise latency & cost.  
+6. **Lazy SEO Calls**  
+   * Skip DataForSEO live look-ups in demo; fetch only when `useLiveData=true`.  
 
 ---
 
-**End of Handover – safe to continue work next session.**
+## 8 · Next-Session Priorities
+1. **Implement Performance roadmap item 1 (job queue)** – prove 50 % runtime reduction.  
+2. Add **Notion API** prompt storage prototype (replace markdown).  
+3. Wire up **export** endpoints (PDF, Sheets, Notion).  
+4. Replace demo auth with real **Google OAuth** flow.  
+5. UI polish – progress animations, loading skeletons, missing icons.  
+
+---
+
+## 9 · How to Test & Verify
+1. **Start back-end**  
+   ```
+   cd server
+   npm start              # port 5001
+   ```
+2. **Start front-end**  
+   ```
+   cd client
+   npm start              # port 3000
+   ```
+3. **Demo Login** in browser → fill CIA wizard → **Generate**  
+4. Watch progress reach **100 %** (≈2-3 min).  
+5. Confirm `GET /api/cia/reports?` returns `status:"completed"`.  
+6. Use **export** buttons (PDF stub returns link).  
+7. Optional API-only test:  
+   ```
+   curl -H "Authorization: Bearer demo-token" \
+        -H "Content-Type: application/json"  \
+        -d '{"name":"Test","initialData":{"companyName":"X","websiteUrl":"https://x.com"}}' \
+        http://localhost:5001/api/cia/reports
+   ```
+
+---
+
+**Prepared by:** Factory Assistant  
+Feel free to ping me next session for performance deep-dive! 🚀  

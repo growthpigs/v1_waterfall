@@ -1,608 +1,246 @@
 const mongoose = require('mongoose');
 const Schema = mongoose.Schema;
 
-// Status enum for CIA report generation process
-const REPORT_STATUS = {
-  INITIATED: 'initiated',
-  DATA_COLLECTION: 'data_collection',
-  WEBSITE_ANALYSIS: 'website_analysis',
-  COMPETITOR_ANALYSIS: 'competitor_analysis',
-  SEO_ANALYSIS: 'seo_analysis',
-  MARKET_RESEARCH: 'market_research',
-  SOCIAL_PROOF_ANALYSIS: 'social_proof_analysis',
-  GENERATING_CONTENT_BIBLE: 'generating_content_bible',
-  COMPLETED: 'completed',
-  FAILED: 'failed'
+const errorSchema = new Schema({
+  stage: { type: String, required: true },
+  message: { type: String, required: true },
+  timestamp: { type: Date, default: Date.now }
+}, { _id: false });
+
+const processingMetadataSchema = new Schema({
+  startTime: { type: Date },
+  endTime: { type: Date },
+  totalDuration: { type: Number }, // in seconds
+  apiCalls: {
+    openRouter: { type: Number, default: 0 },
+    dataForSEO: { type: Number, default: 0 }
+  }
+}, { _id: false });
+
+const phaseOutputBaseSchema = {
+  completed: { type: Boolean, default: false },
+  timestamp: { type: Date },
+  aiMetadata: {
+    model: String,
+    tokensUsed: Number,
+    processingTime: Number // in ms for this specific AI call
+  },
+  // Common analysis structure
+  analysis: { type: Schema.Types.Mixed } 
 };
 
-// Schema for the CIA Report
+const websiteAnalysisSchema = new Schema({
+  ...phaseOutputBaseSchema,
+  websiteAnalysis: {
+    url: String,
+    completed: Boolean,
+    timestamp: Date
+  },
+  competitorAnalysis: {
+    completed: Boolean,
+    timestamp: Date
+  }
+}, { _id: false });
+
+const seoIntelligenceSchema = new Schema({
+  ...phaseOutputBaseSchema,
+  seoAnalysis: {
+    completed: Boolean,
+    keywords: Schema.Types.Mixed,
+    timestamp: Date
+  },
+  socialAnalysis: {
+    completed: Boolean,
+    platforms: Schema.Types.Mixed,
+    timestamp: Date
+  },
+  dataForSEOResults: Schema.Types.Mixed
+}, { _id: false });
+
+const marketResearchSchema = new Schema({
+  ...phaseOutputBaseSchema,
+  marketResearch: {
+    completed: Boolean,
+    insights: Schema.Types.Mixed,
+    timestamp: Date
+  }
+}, { _id: false });
+
+const socialProofAnalysisSchema = new Schema({ // Corresponds to Golden Hippo Offer
+  ...phaseOutputBaseSchema,
+  offerStrategy: {
+    completed: Boolean,
+    offers: [Schema.Types.Mixed],
+    pricingStrategy: Schema.Types.Mixed,
+    valueProposition: Schema.Types.Mixed,
+    timestamp: Date
+  },
+  ninetyDayPlan: {
+    completed: Boolean,
+    milestones: [Schema.Types.Mixed],
+    timestamp: Date
+  }
+}, { _id: false });
+
+const competitorAnalysisSchema = new Schema({ // Corresponds to Convergence Blender
+  ...phaseOutputBaseSchema,
+  contentSilos: {
+    completed: Boolean,
+    silos: [Schema.Types.Mixed],
+    weeklyPlan: Schema.Types.Mixed,
+    timestamp: Date
+  },
+  contentTypes: {
+    completed: Boolean,
+    recommendations: Schema.Types.Mixed,
+    timestamp: Date
+  }
+}, { _id: false });
+
+const masterContentBibleSchema = new Schema({
+  ...phaseOutputBaseSchema,
+  brandNarrative: Schema.Types.Mixed,
+  contentStrategy: Schema.Types.Mixed,
+  keywordStrategy: Schema.Types.Mixed,
+  contentRecommendations: Schema.Types.Mixed,
+  contentFormulas: Schema.Types.Mixed,
+  brandGuidelines: Schema.Types.Mixed,
+  competitiveInsights: Schema.Types.Mixed,
+  timestamp: Date
+}, { _id: false });
+
+
 const ciaReportSchema = new Schema({
-  // Report metadata
-  user: {
-    type: Schema.Types.ObjectId,
-    ref: 'User',
-    required: true
-  },
-  name: {
-    type: String,
-    required: true,
-    trim: true
-  },
-  description: {
-    type: String,
-    trim: true
-  },
-  status: {
-    type: String,
-    enum: Object.values(REPORT_STATUS),
-    default: REPORT_STATUS.INITIATED
-  },
-  // Numeric index of the phase currently being processed (1-based, 0 when idle)
-  currentPhase: {
-    type: Number,
-    min: 0,
-    max: 6,
-    default: 0
-  },
-  // Fine-grained progress of the current phase (0-100)
-  phaseProgress: {
-    type: Number,
-    min: 0,
-    max: 100,
-    default: 0
-  },
-  progress: {
-    type: Number,
-    min: 0,
-    max: 100,
-    default: 0
-  },
-  errorMessage: String,
-  
-  // Initial data collection
+  user: { type: Schema.Types.ObjectId, ref: 'User', required: true },
+  name: { type: String, required: true },
+  description: { type: String },
   initialData: {
-    companyName: {
-      type: String,
-      required: true,
-      trim: true
-    },
-    websiteUrl: {
-      type: String,
-      required: true,
-      trim: true
-    },
+    companyName: { type: String, required: true },
+    websiteUrl: { type: String, required: true },
+    industry: { type: String },
+    targetAudience: { type: String },
+    businessGoals: { type: String },
+    contentGoals: { type: String },
+    brandVoice: { type: String },
     keyPersonOfInfluence: {
       name: String,
       role: String,
-      socialProfiles: {
-        linkedin: String,
-        twitter: String,
-        instagram: String,
-        facebook: String,
-        other: [String]
-      }
+      socialLinks: [String]
     },
-    industry: String,
-    targetAudience: [String],
-    businessGoals: [String],
-    contentGoals: [String],
-    brandVoice: {
-      tone: String,
-      style: String,
-      examples: [String]
-    }
+    primaryKeyword: { type: String }
   },
+  status: { 
+    type: String, 
+    enum: [
+      'initiated', 
+      'website_analysis', // Phase 1: Business Intelligence
+      'seo_analysis',       // Phase 2: SEO & Social Intelligence
+      'market_research',    // Phase 3: Strategic Synthesis
+      'social_proof_analysis', // Phase 4: Golden Hippo Offer
+      'generating_content_bible', // Phase 5: Convergence Blender
+      'completed',          // Phase 6: Master Content Bible (final)
+      'failed'
+    ], 
+    default: 'initiated' 
+  },
+  progress: { type: Number, default: 0, min: 0, max: 100 }, // Overall progress
+  currentPhase: { type: Number, default: 0 }, // 1-6, 0 if idle/not started
+  phaseProgress: { type: Number, default: 0, min: 0, max: 100 }, // Progress of the currentPhase
+
+  // Phase-specific outputs
+  websiteAnalysis: websiteAnalysisSchema,         // Phase 1 output
+  seoIntelligence: seoIntelligenceSchema,       // Phase 2 output
+  marketResearch: marketResearchSchema,         // Phase 3 output
+  socialProofAnalysis: socialProofAnalysisSchema, // Phase 4 output (Golden Hippo)
+  competitorAnalysis: competitorAnalysisSchema,  // Phase 5 output (Convergence Blender)
+  masterContentBible: masterContentBibleSchema,   // Phase 6 output
+
+  errors: [errorSchema],
+  processingMetadata: processingMetadataSchema,
   
-  // Website analysis
-  websiteAnalysis: {
-    completed: {
-      type: Boolean,
-      default: false
-    },
-    pages: [{
+  // Export related fields
+  exports: {
+    pdf: {
       url: String,
-      title: String,
-      metaDescription: String,
-      h1: String,
-      wordCount: Number,
-      contentQuality: {
-        type: String,
-        enum: ['poor', 'fair', 'good', 'excellent']
-      },
-      keywordDensity: Map,
-      internalLinks: Number,
-      externalLinks: Number,
-      images: Number,
-      hasSchema: Boolean
-    }],
-    contentTypes: [{
-      type: String,
-      count: Number,
-      examples: [String]
-    }],
-    messaging: {
-      primaryMessage: String,
-      secondaryMessages: [String],
-      callsToAction: [String],
-      valuePropositions: [String]
+      generatedAt: Date,
+      status: { type: String, enum: ['pending', 'completed', 'failed'], default: 'pending' }
     },
-    branding: {
-      logoUrl: String,
-      colorPalette: [String],
-      typography: [String],
-      imageStyle: String,
-      brandConsistency: {
-        type: String,
-        enum: ['poor', 'fair', 'good', 'excellent']
-      }
+    google_sheets: {
+      url: String,
+      generatedAt: Date,
+      status: { type: String, enum: ['pending', 'completed', 'failed'], default: 'pending' }
     },
-    technical: {
-      pagespeed: {
-        mobile: Number,
-        desktop: Number
-      },
-      mobileResponsive: Boolean,
-      secureConnection: Boolean,
-      crawlability: {
-        type: String,
-        enum: ['poor', 'fair', 'good', 'excellent']
-      },
-      sitemapPresent: Boolean,
-      robotsTxtPresent: Boolean,
-      issues: [{
-        type: String,
-        severity: {
-          type: String,
-          enum: ['low', 'medium', 'high', 'critical']
-        },
-        description: String
-      }]
+    notion: {
+      pageId: String,
+      generatedAt: Date,
+      status: { type: String, enum: ['pending', 'completed', 'failed'], default: 'pending' }
     }
   },
-  
-  // Competitor analysis
-  competitorAnalysis: {
-    completed: {
-      type: Boolean,
-      default: false
-    },
-    competitors: [{
-      name: String,
-      websiteUrl: String,
-      strengths: [String],
-      weaknesses: [String],
-      contentStrategy: String,
-      socialPresence: {
-        platforms: [String],
-        followerCounts: Map,
-        engagementRate: Number
-      },
-      keywordRankings: [{
-        keyword: String,
-        position: Number
-      }],
-      contentTypes: [String],
-      uniqueSellingPoints: [String]
-    }]
-  },
-  
-  // SEO intelligence
-  seoIntelligence: {
-    completed: {
-      type: Boolean,
-      default: false
-    },
-    domainAuthority: Number,
-    organicTraffic: Number,
-    organicKeywords: Number,
-    keywordResearch: {
-      primaryKeywords: [{
-        keyword: String,
-        searchVolume: Number,
-        difficulty: Number,
-        cpc: Number,
-        currentRanking: Number
-      }],
-      secondaryKeywords: [{
-        keyword: String,
-        searchVolume: Number,
-        difficulty: Number,
-        cpc: Number,
-        currentRanking: Number
-      }],
-      longTailKeywords: [{
-        keyword: String,
-        searchVolume: Number,
-        difficulty: Number,
-        cpc: Number,
-        currentRanking: Number
-      }]
-    },
-    gapAnalysis: {
-      missingKeywords: [{
-        keyword: String,
-        searchVolume: Number,
-        difficulty: Number,
-        competitor: String,
-        competitorRanking: Number
-      }],
-      contentGaps: [{
-        topic: String,
-        relatedKeywords: [String],
-        competitorCoverage: [String]
-      }]
-    },
-    opportunities: [{
-      keyword: String,
-      searchVolume: Number,
-      difficulty: Number,
-      potentialTraffic: Number,
-      suggestedContentType: String,
-      priority: {
-        type: String,
-        enum: ['low', 'medium', 'high']
-      }
-    }]
-  },
-  
-  // Market research
-  marketResearch: {
-    completed: {
-      type: Boolean,
-      default: false
-    },
-    industryTrends: [{
-      trend: String,
-      growthRate: Number,
-      relevance: {
-        type: String,
-        enum: ['low', 'medium', 'high']
-      },
-      sources: [String]
-    }],
-    audienceInsights: {
-      demographics: {
-        ageRanges: [String],
-        genders: [String],
-        locations: [String],
-        incomeRanges: [String],
-        educationLevels: [String]
-      },
-      psychographics: {
-        interests: [String],
-        values: [String],
-        painPoints: [String],
-        goals: [String]
-      },
-      behaviors: {
-        purchasePatterns: [String],
-        contentConsumptionHabits: [String],
-        deviceUsage: Map,
-        socialPlatformPreferences: [String]
-      }
-    },
-    marketPositioning: {
-      currentPosition: String,
-      recommendedPosition: String,
-      differentiators: [String],
-      marketGaps: [String]
-    }
-  },
-  
-  // Social proof analysis
-  socialProofAnalysis: {
-    completed: {
-      type: Boolean,
-      default: false
-    },
-    testimonials: [{
-      source: String,
-      text: String,
-      author: String,
-      rating: Number,
-      date: Date,
-      sentiment: {
-        type: String,
-        enum: ['negative', 'neutral', 'positive']
-      },
-      keywords: [String]
-    }],
-    reviews: {
-      platforms: [{
-        name: String,
-        averageRating: Number,
-        totalReviews: Number,
-        positivePercentage: Number,
-        negativePercentage: Number
-      }],
-      commonThemes: {
-        positive: [{
-          theme: String,
-          frequency: Number,
-          examples: [String]
-        }],
-        negative: [{
-          theme: String,
-          frequency: Number,
-          examples: [String]
-        }]
-      }
-    },
-    socialMentions: {
-      volume: Number,
-      sentiment: {
-        positive: Number,
-        neutral: Number,
-        negative: Number
-      },
-      influencers: [{
-        name: String,
-        platform: String,
-        reach: Number,
-        engagement: Number,
-        sentiment: {
-          type: String,
-          enum: ['negative', 'neutral', 'positive']
-        }
-      }],
-      topPosts: [{
-        platform: String,
-        url: String,
-        engagement: Number,
-        sentiment: {
-          type: String,
-          enum: ['negative', 'neutral', 'positive']
-        }
-      }]
-    }
-  },
-  
-  // Master Content Bible
-  masterContentBible: {
-    completed: {
-      type: Boolean,
-      default: false
-    },
-    brandNarrative: {
-      story: String,
-      mission: String,
-      vision: String,
-      values: [String],
-      uniqueSellingProposition: String,
-      targetAudiencePersonas: [{
-        name: String,
-        description: String,
-        demographics: Map,
-        goals: [String],
-        challenges: [String],
-        contentPreferences: [String]
-      }]
-    },
-    contentStrategy: {
-      goals: [String],
-      kpis: [String],
-      channels: [{
-        name: String,
-        purpose: String,
-        audience: String,
-        contentTypes: [String],
-        frequency: String,
-        metrics: [String]
-      }],
-      contentCalendar: {
-        themes: [String],
-        seasonalOpportunities: [{
-          name: String,
-          timing: String,
-          contentIdeas: [String]
-        }]
-      }
-    },
-    keywordStrategy: {
-      primaryKeywords: [String],
-      secondaryKeywords: [String],
-      semanticKeywordClusters: [{
-        mainKeyword: String,
-        relatedKeywords: [String]
-      }]
-    },
-    contentRecommendations: {
-      blogs: [{
-        title: String,
-        targetKeywords: [String],
-        outline: [String],
-        estimatedWordCount: Number,
-        contentType: {
-          type: String,
-          enum: ['SNIPER', 'RECON', 'PHANTOM', 'BLACKOUT', 'INTEL', 'OVERWATCH', 'CLASSIFIED', 'BRIEFING']
-        }
-      }],
-      socialMedia: [{
-        platform: String,
-        contentIdeas: [String],
-        hashtags: [String],
-        contentType: {
-          type: String,
-          enum: ['VIPER', 'GHOST', 'TANGO', 'ECHO', 'BRAVO', 'DELTA', 'FOXTROT', 'SIERRA']
-        }
-      }],
-      video: [{
-        title: String,
-        description: String,
-        keyPoints: [String],
-        estimatedDuration: String,
-        contentType: {
-          type: String,
-          enum: ['APACHE', 'STEALTH', 'PREDATOR', 'BLACKHAWK', 'COBRA', 'FALCON', 'RAPTOR', 'HAWK']
-        }
-      }],
-      email: [{
-        subject: String,
-        purpose: String,
-        keyPoints: [String],
-        callToAction: String,
-        contentType: {
-          type: String,
-          enum: ['CIPHER', 'WHISKEY', 'RADIO', 'ALPHA', 'OSCAR', 'UNIFORM', 'VICTOR', 'YANKEE']
-        }
-      }],
-      landingPages: [{
-        title: String,
-        purpose: String,
-        keyElements: [String],
-        callToAction: String,
-        contentType: {
-          type: String,
-          enum: ['FORTRESS', 'STRONGHOLD', 'BUNKER', 'OUTPOST', 'CHECKPOINT', 'BARRICADE', 'WATCHTOWER', 'COMMAND']
-        }
-      }],
-      podcast: [{
-        title: String,
-        description: String,
-        potentialGuests: [String],
-        keyTopics: [String],
-        contentType: {
-          type: String,
-          enum: ['RADIO SILENCE', 'TRANSMISSION', 'FREQUENCY', 'SIGNAL', 'BEACON', 'SONAR', 'RADAR']
-        }
-      }]
-    },
-    contentFormulas: {
-      headlines: [String],
-      emailSubjects: [String],
-      callsToAction: [String],
-      valuePropositions: [String]
-    },
-    brandGuidelines: {
-      voice: {
-        tone: String,
-        vocabulary: [String],
-        examples: [String]
-      },
-      messaging: {
-        primaryMessage: String,
-        supportingMessages: [String],
-        doSay: [String],
-        dontSay: [String]
-      },
-      visualGuidelines: {
-        colorHexCodes: [String],
-        fonts: [String],
-        imageStyle: String,
-        logoUsage: [String]
-      }
-    },
-    competitiveInsights: {
-      strengthsToEmphasize: [String],
-      weaknessesToAddress: [String],
-      opportunitiesToTarget: [String],
-      threatsToMonitor: [String]
-    }
-  },
-  
-  // Export history
-  exports: [{
-    format: {
-      type: String,
-      enum: ['pdf', 'docx', 'notion', 'google_sheets']
-    },
-    url: String,
-    createdAt: {
-      type: Date,
-      default: Date.now
-    }
-  }],
-  
-  // Processing metadata
-  processingMetadata: {
-    startTime: Date,
-    endTime: Date,
-    totalDuration: Number, // in seconds
-    apiCalls: {
-      // Only DataForSEO is tracked; it now covers trends & SEO
-      dataForSEO: Number
-    },
-    errors: [{
-      stage: String,
-      message: String,
-      timestamp: Date
-    }]
-  }
-}, {
-  timestamps: true
+
+  createdAt: { type: Date, default: Date.now },
+  updatedAt: { type: Date, default: Date.now }
 });
 
-// Virtual for report age
-ciaReportSchema.virtual('age').get(function() {
-  return Math.floor((Date.now() - this.createdAt) / (1000 * 60 * 60 * 24)); // in days
-});
-
-// Method to update report status
-ciaReportSchema.methods.updateStatus = function (
-  status,
-  progress = null,
-  currentPhase = null,
-  phaseProgress = null
-) {
-  this.status = status;
-  if (progress !== null) {
-    this.progress = progress;
-  }
-  // Persist per-phase tracking if supplied
-  if (currentPhase !== null) {
-    this.currentPhase = currentPhase;
-  }
-  if (phaseProgress !== null) {
-    this.phaseProgress = phaseProgress;
-  }
-  
-  // Update timestamps based on status
-  if (status === REPORT_STATUS.INITIATED) {
+// Middleware to update 'updatedAt' field
+ciaReportSchema.pre('save', function(next) {
+  this.updatedAt = new Date();
+  if (this.isNew && !this.processingMetadata.startTime) {
     this.processingMetadata.startTime = new Date();
-  } else if (status === REPORT_STATUS.COMPLETED || status === REPORT_STATUS.FAILED) {
-    this.processingMetadata.endTime = new Date();
-    this.processingMetadata.totalDuration = 
-      (this.processingMetadata.endTime - this.processingMetadata.startTime) / 1000;
+  }
+  next();
+});
+
+ciaReportSchema.pre('findOneAndUpdate', function(next) {
+  this.set({ updatedAt: new Date() });
+  next();
+});
+
+
+// Method to update report status and progress
+ciaReportSchema.methods.updateStatus = async function(status, progress, currentPhase, phaseProgress, error = null) {
+  console.log(`[CIAReport MODEL DEBUG] updateStatus called with: status=${status}, progress=${progress}, currentPhase=${currentPhase}, phaseProgress=${phaseProgress}, error=${JSON.stringify(error)}`);
+  this.status = status;
+  if (progress !== undefined) this.progress = progress;
+  if (currentPhase !== undefined) this.currentPhase = currentPhase;
+  if (phaseProgress !== undefined) this.phaseProgress = phaseProgress;
+
+  if (error) {
+    this.errors.push(error); // error should be an object { stage, message }
   }
   
+  // Log the status update for easier debugging from the server logs
+  // This is separate from the client-facing status polling
+  console.log(`[CIA STATUS] id=${this._id} status=${this.status} progress=${this.progress} currentPhase=${this.currentPhase} phaseProgress=${this.phaseProgress}`);
+  
+  // If you want to send this detailed status payload via websockets or SSE in the future,
+  // this would be a good place to emit an event.
+  // For now, the client polls the /status endpoint which reads these fields.
+
   return this.save();
 };
 
-// Method to add error
-ciaReportSchema.methods.addError = function(stage, message) {
-  if (!this.processingMetadata.errors) {
-    this.processingMetadata.errors = [];
-  }
-  
-  this.processingMetadata.errors.push({
-    stage,
-    message,
-    timestamp: new Date()
-  });
-  
+// Method to add an error to the report
+ciaReportSchema.methods.addError = async function(stage, message) {
+  this.errors.push({ stage, message, timestamp: new Date() });
   return this.save();
 };
 
-// Method to add export record
-ciaReportSchema.methods.addExport = function(format, url) {
-  if (!this.exports) {
-    this.exports = [];
+// Method to update export status
+ciaReportSchema.methods.updateExportStatus = async function(format, status, urlOrPageId = null) {
+  const exportField = `exports.${format}`;
+  this[exportField].status = status;
+  this[exportField].generatedAt = new Date();
+  if (status === 'completed' && urlOrPageId) {
+    if (format === 'notion') {
+      this[exportField].pageId = urlOrPageId;
+    } else {
+      this[exportField].url = urlOrPageId;
+    }
   }
-  
-  this.exports.push({
-    format,
-    url,
-    createdAt: new Date()
-  });
-  
   return this.save();
 };
 
-// Static method to find reports by status
-ciaReportSchema.statics.findByStatus = function(status) {
-  return this.find({ status });
-};
 
-// Create and export the model
 const CIAReport = mongoose.model('CIAReport', ciaReportSchema);
+
 module.exports = CIAReport;

@@ -1,0 +1,306 @@
+## 5. UI/UX Design
+
+Project Waterfall's user interface is inspired by CleanMyMac's sleek, modern aesthetic, providing an intuitive and visually appealing experience.
+
+### Design Philosophy
+
+The UI/UX design for Project Waterfall follows these core principles:
+
+1. **Clarity**: Clear, intuitive interfaces that guide users through complex processes
+2. **Visual Appeal**: Modern, professional aesthetic with dark mode and gradient accents
+3. **Progressive Disclosure**: Information revealed progressively to avoid overwhelming users
+4. **Guided Experience**: Wizard-based approaches for complex tasks
+5. **Visual Feedback**: Clear visual indicators of system status and progress
+6. **Consistency**: Unified design language across all components
+7. **Accessibility**: Inclusive design that works for all users
+
+### Visual Identity
+
+#### Color Palette
+
+- **Primary Colors**:
+  - Deep Purple (#5B21B6): Primary brand color
+  - Electric Blue (#2563EB): Secondary brand color
+  - Gradient transitions between these colors for key elements
+
+- **Secondary Colors**:
+  - Teal (#0D9488): Success and positive indicators
+  - Amber (#F59E0B): Warnings and attention indicators
+  - Ruby (#E11D48): Errors and critical alerts
+
+- **Background Colors**:
+  - Dark Mode: Rich dark background (#111827) with subtle gradients
+  - Light Mode: Clean white background (#FFFFFF) with subtle shadows
+
+#### Typography
+
+- **Primary Font**: Inter (sans-serif)
+  - Headings: Semi-Bold (600)
+  - Body: Regular (400)
+  - Accents: Medium (500)
+
+- **Secondary Font**: Roboto Mono (for code or technical elements)
+  - Regular (400) for normal text
+  - Medium (500) for emphasis
+
+#### Iconography
+
+- **Style**: Simple, clean line icons with consistent stroke width
+- **Animation**: Subtle animations for interactive elements
+- **Consistency**: Unified icon set across all components
+- **Military Theme**: Subtle military-inspired icons for content classification
+
+### Layout & Structure
+
+#### Main Application Layout
+
+```
+┌─────────────────────────────────────────────────────────────────────────┐
+│ ┌─────────┐                                              ┌───────────┐  │
+│ │ Logo    │                                              │ User Menu │  │
+│ └─────────┘                                              └───────────┘  │
+├─────────────────────────────────────────────────────────────────────────┤
+│ ┌─────────┐ ┌─────────────────────────────────────────────────────────┐ │
+│ │         │ │                                                         │ │
+│ │         │ │                                                         │ │
+│ │         │ │                                                         │ │
+│ │         │ │                                                         │ │
+│ │  Side   │ │                  Main Content Area                      │ │
+│ │  Nav    │ │                                                         │ │
+│ │         │ │                                                         │ │
+│ │         │ │                                                         │ │
+│ │         │ │                                                         │ │
+│ │         │ │                                                         │ │
+│ └─────────┘ └─────────────────────────────────────────────────────────┘ │
+└─────────────────────────────────────────────────────────────────────────┘
+```
+
+#### Side Navigation
+
+The side navigation provides access to the main components of the application:
+
+- **CIA**: Access to the Colossal Intelligence Arsenal
+  - Full CIA
+  - Clarity Board (free version)
+  - Previous Reports
+
+- **Cartwheel**: Access to the Cartwheel bundle
+  - Content Calendar
+  - Active Projects
+  - Content Library
+
+- **Tools**: Individual marketing tools
+  - Categorized by function
+  - Favorites section
+  - Recently used
+
+- **Settings**: Application configuration
+  - Account settings
+  - API connections
+  - Preferences
+
+#### Dashboard Layout
+
+The dashboard uses a card-based layout with clear visual hierarchy:
+
+```
+┌─────────────────────────────────────────────────────────────────────────┐
+│ ┌─────────────────────────────────────┐ ┌─────────────────────────────┐ │
+│ │                                     │ │                             │ │
+│ │           Primary Metric            │ │      Secondary Metric       │ │
+│ │                                     │ │                             │ │
+│ └─────────────────────────────────────┘ └─────────────────────────────┘ │
+├─────────────────────────────────────────────────────────────────────────┤
+│ ┌─────────────┐ ┌─────────────┐ ┌─────────────┐ ┌─────────────────────┐ │
+│ │             │ │             │ │             │ │                     │ │
+│ │  Metric 1   │ │  Metric 2   │ │  Metric 3   │ │      Activity       │ │
+│ │             │ │             │ │             │ │                     │ │
+│ └─────────────┘ └─────────────┘ └─────────────┘ └─────────────────────┘ │
+├─────────────────────────────────────────────────────────────────────────┤
+│ ┌─────────────────────────────┐ ┌───────────────────────────────────────┤
+│ │                             │ │                                       │
+│ │                             │ │                                       │
+│ │        Data Table           │ │            Visualization              │
+│ │                             │ │                                       │
+│ │                             │ │                                       │
+│ └─────────────────────────────┘ └───────────────────────────────────────┤
+└─────────────────────────────────────────────────────────────────────────┘
+```
+
+### Key UI Components
+
+#### Circular Progress Indicators
+
+Inspired by CleanMyMac, circular progress indicators provide visual feedback for processes:
+
+```
+    ┌───────┐
+   /         \
+  /           \
+ |      85%    |
+  \           /
+   \         /
+    └───────┘
+```
+
+- **Color Coding**: Green for good, amber for attention, red for issues
+- **Animation**: Smooth animation for progress changes
+- **Center Content**: Key metric or status in the center
+- **Hover Details**: Additional information on hover
+
+#### Card Components
+
+Cards organize information into digestible chunks:
+
+```
+┌─────────────────────────────┐
+│ Card Title                  │
+├─────────────────────────────┤
+│                             │
+│ Card Content                │
+│                             │
+│                             │
+├─────────────────────────────┤
+│ Card Footer / Actions       │
+└─────────────────────────────┘
+```
+
+- **Elevation**: Subtle shadows for depth
+- **Interaction**: Hover and click states
+- **Expandability**: Option to expand for more details
+- **Consistency**: Uniform padding and spacing
+
+#### Wizard Interface
+
+The wizard interface guides users through complex processes:
+
+```
+┌─────────────────────────────────────────────────────────────────────────┐
+│ ┌─────┐ ┌─────┐ ┌─────┐ ┌─────┐                                         │
+│ │  1  │ │  2  │ │  3  │ │  4  │                                         │
+│ └─────┘ └─────┘ └─────┘ └─────┘                                         │
+├─────────────────────────────────────────────────────────────────────────┤
+│                                                                         │
+│                                                                         │
+│                         Step Content                                    │
+│                                                                         │
+│                                                                         │
+├─────────────────────────────────────────────────────────────────────────┤
+│                                                 ┌─────────┐ ┌─────────┐ │
+│                                                 │  Back   │ │  Next   │ │
+│                                                 └─────────┘ └─────────┘ │
+└─────────────────────────────────────────────────────────────────────────┘
+```
+
+- **Progress Tracking**: Clear indication of current step and total steps
+- **Navigation**: Easy back and next buttons
+- **Validation**: Input validation before proceeding
+- **Save & Resume**: Option to save progress and resume later
+
+#### Data Visualizations
+
+Data visualizations present complex information in an understandable format:
+
+- **Charts & Graphs**: Line, bar, pie, and radar charts for different data types
+- **Heatmaps**: For showing density or intensity of data points
+- **Network Diagrams**: For showing relationships between entities
+- **Comparison Views**: Side-by-side comparisons of data sets
+
+#### Content Preview
+
+Content preview components show how content will appear on different platforms:
+
+```
+┌─────────────────────────────────────────────────┐
+│ Platform: [LinkedIn] ▼                          │
+├─────────────────────────────────────────────────┤
+│ ┌─────────────────────────────────────────────┐ │
+│ │                                             │ │
+│ │                                             │ │
+│ │          Platform-specific Preview          │ │
+│ │                                             │ │
+│ │                                             │ │
+│ └─────────────────────────────────────────────┘ │
+├─────────────────────────────────────────────────┤
+│ ┌─────────┐ ┌─────────┐ ┌─────────────────────┐ │
+│ │  Edit   │ │ Export  │ │      Publish        │ │
+│ └─────────┘ └─────────┘ └─────────────────────┘ │
+└─────────────────────────────────────────────────┘
+```
+
+- **Platform Selection**: Dropdown to switch between platform previews
+- **Responsive Preview**: Show how content appears on different devices
+- **Interactive Elements**: Clickable elements to test functionality
+- **Export Options**: Options to export content in different formats
+
+### User Flows
+
+#### CIA Wizard Flow
+
+1. **Start Screen**: Introduction and overview
+2. **Basic Information**: Company name, URL, KPOI
+3. **Website Analysis**: Automated analysis with progress indicators
+4. **Competitor Selection**: Review and selection of competitors
+5. **SEO Focus**: Selection of primary SEO targets
+6. **Analysis Processing**: Visual feedback during processing
+7. **Results Overview**: Summary of findings
+8. **Master Content Bible**: Detailed results and recommendations
+9. **Export Options**: PDF, Google Sheets, Notion, etc.
+
+#### Cartwheel Content Creation Flow
+
+1. **Content Type Selection**: Choose content type (e.g., SNIPER, VIPER)
+2. **CIA Data Selection**: Select relevant CIA data to use
+3. **Content Parameters**: Configure specific content parameters
+4. **Style Selection**: Choose from available prompt styles
+5. **Preview Generation**: View preview of generated content
+6. **Editing Interface**: Make adjustments to content
+7. **Platform Optimization**: Optimize for specific platforms
+8. **Publishing Options**: Schedule or publish immediately
+
+#### Clarity Board Flow
+
+1. **Introduction**: Explanation of Clarity Board vs. full CIA
+2. **Basic Information**: Simplified data collection
+3. **Quick Analysis**: Streamlined processing with visual feedback
+4. **Results Preview**: Limited but valuable insights
+5. **Upgrade Option**: Clear pathway to full CIA functionality
+
+### Responsive Design
+
+The application is designed to work across different devices and screen sizes:
+
+- **Desktop**: Full-featured interface with optimal layout
+- **Tablet**: Adapted layout with preserved functionality
+- **Mobile**: Simplified interface focusing on core features
+- **Breakpoints**: Specific design adjustments at different screen widths
+
+### Accessibility Considerations
+
+The design incorporates accessibility best practices:
+
+- **Color Contrast**: WCAG 2.1 AA compliant color contrast
+- **Keyboard Navigation**: Full keyboard accessibility
+- **Screen Reader Support**: Proper ARIA labels and semantic HTML
+- **Text Sizing**: Scalable text for readability
+- **Focus Indicators**: Clear visual focus indicators
+
+### Animation & Micro-interactions
+
+Subtle animations enhance the user experience:
+
+- **Transitions**: Smooth transitions between states
+- **Progress Indicators**: Animated progress indicators
+- **Hover Effects**: Subtle hover effects for interactive elements
+- **Loading States**: Engaging loading animations
+- **Success/Error Feedback**: Clear visual feedback for actions
+
+### Design System
+
+A comprehensive design system ensures consistency across the application:
+
+- **Component Library**: Reusable UI components
+- **Style Guide**: Detailed documentation of visual elements
+- **Pattern Library**: Common UI patterns and their usage
+- **Design Tokens**: Centralized design variables
+- **Usage Guidelines**: Instructions for implementing the design system

@@ -473,6 +473,7 @@ class CIAWorkflowService {
       }
       
       // Step 5: Add metadata and return
+      console.log(`[CIAWorkflow DEBUG] processBusinessIntelligence successfully completing for Report ID: ${report._id}`);
       return {
         completed: true,
         analysis: businessIntelligence,
@@ -493,6 +494,7 @@ class CIAWorkflowService {
       };
     } catch (error) {
       console.error('[CIAWorkflow] Business Intelligence error:', error);
+      console.log(`[CIAWorkflow DEBUG] processBusinessIntelligence ERRORED for Report ID: ${report._id}, Error: ${error.message}`);
       throw error;
     }
   }

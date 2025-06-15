@@ -1,0 +1,110 @@
+## 2. System Architecture
+
+Project Waterfall employs a modern, scalable architecture designed to handle complex data processing while providing a seamless user experience.
+
+### High-Level Architecture
+
+```
+┌─────────────────────────────────────────────────────────────────────────┐
+│                           CLIENT LAYER                                   │
+│  ┌──────────────┐   ┌──────────────┐   ┌──────────────┐   ┌──────────┐  │
+│  │  React Web   │   │  React       │   │  Mobile      │   │  API     │  │
+│  │  Application │   │  Native App  │   │  Web View    │   │  Clients │  │
+│  └──────────────┘   └──────────────┘   └──────────────┘   └──────────┘  │
+└─────────────────────────────────────────────────────────────────────────┘
+                                  │
+                                  ▼
+┌─────────────────────────────────────────────────────────────────────────┐
+│                           API LAYER                                      │
+│  ┌──────────────┐   ┌──────────────┐   ┌──────────────┐   ┌──────────┐  │
+│  │  REST API    │   │  GraphQL     │   │  WebSocket   │   │  Auth    │  │
+│  │  Endpoints   │   │  Endpoints   │   │  Server      │   │  Service │  │
+│  └──────────────┘   └──────────────┘   └──────────────┘   └──────────┘  │
+└─────────────────────────────────────────────────────────────────────────┘
+                                  │
+                                  ▼
+┌─────────────────────────────────────────────────────────────────────────┐
+│                         SERVICE LAYER                                    │
+│  ┌──────────────┐   ┌──────────────┐   ┌──────────────┐   ┌──────────┐  │
+│  │  CIA Engine  │   │  Cartwheel   │   │  Content     │   │  User    │  │
+│  │  Service     │   │  Service     │   │  Generator   │   │  Service │  │
+│  └──────────────┘   └──────────────┘   └──────────────┘   └──────────┘  │
+│                                                                         │
+│  ┌──────────────┐   ┌──────────────┐   ┌──────────────┐   ┌──────────┐  │
+│  │  Data        │   │  Prompt      │   │  Export      │   │  Payment  │  │
+│  │  Processor   │   │  Manager     │   │  Service     │   │  Service │  │
+│  └──────────────┘   └──────────────┘   └──────────────┘   └──────────┘  │
+└─────────────────────────────────────────────────────────────────────────┘
+                                  │
+                                  ▼
+┌─────────────────────────────────────────────────────────────────────────┐
+│                        INTEGRATION LAYER                                 │
+│  ┌──────────────┐   ┌──────────────┐   ┌──────────────┐   ┌──────────┐  │
+│  │  DataForSEO  │   │  Google      │   │  Social      │   │  Notion  │  │
+│  │  Connector   │   │  Trends      │   │  Media       │   │  API     │  │
+│  └──────────────┘   └──────────────┘   └──────────────┘   └──────────┘  │
+│                                                                         │
+│  ┌──────────────┐   ┌──────────────┐   ┌──────────────┐   ┌──────────┐  │
+│  │  AI Model    │   │  Analytics   │   │  Email       │   │  Storage │  │
+│  │  Connectors  │   │  Integrations│   │  Service     │   │  Service │  │
+│  └──────────────┘   └──────────────┘   └──────────────┘   └──────────┘  │
+└─────────────────────────────────────────────────────────────────────────┘
+                                  │
+                                  ▼
+┌─────────────────────────────────────────────────────────────────────────┐
+│                          DATA LAYER                                      │
+│  ┌──────────────┐   ┌──────────────┐   ┌──────────────┐   ┌──────────┐  │
+│  │  User        │   │  Content     │   │  Analytics   │   │  Config  │  │
+│  │  Database    │   │  Database    │   │  Database    │   │  Storage │  │
+│  └──────────────┘   └──────────────┘   └──────────────┘   └──────────┘  │
+└─────────────────────────────────────────────────────────────────────────┘
+```
+
+### Technology Stack
+
+#### Frontend
+- **Framework**: React.js for web application
+- **UI Components**: Custom React components inspired by CleanMyMac aesthetic
+- **State Management**: Redux for global state, Context API for component-level state
+- **Styling**: Styled Components with a custom design system
+- **Data Visualization**: D3.js and Chart.js for interactive visualizations
+- **Build Tools**: Webpack, Babel
+
+#### Backend
+- **API Framework**: Node.js with Express.js
+- **Authentication**: JWT-based authentication system
+- **Database**: MongoDB for flexible document storage
+- **Caching**: Redis for performance optimization
+- **File Storage**: AWS S3 or equivalent for asset storage
+- **Search**: Elasticsearch for advanced content searching
+
+#### Integration Layer
+- **DataForSEO**: MCP Server integration for SEO data
+- **Google Trends**: API integration for long-term trend data
+- **Social Media**: API integrations with X.com, TikTok, etc.
+- **Notion**: API integration for BuildFast compatibility
+- **AI Models**: Connections to various AI services for content generation
+
+#### Infrastructure
+- **Hosting**: Cloud-based (AWS, GCP, or Azure)
+- **Containerization**: Docker for consistent environments
+- **Orchestration**: Kubernetes for scaling and management
+- **CI/CD**: GitHub Actions for automated testing and deployment
+- **Monitoring**: Prometheus and Grafana for system monitoring
+- **Logging**: ELK Stack (Elasticsearch, Logstash, Kibana)
+
+### Security Considerations
+
+- **Authentication**: Secure user authentication with MFA options
+- **Authorization**: Role-based access control for different user types
+- **Data Protection**: Encryption at rest and in transit
+- **API Security**: Rate limiting, input validation, and OWASP protection
+- **Compliance**: GDPR and CCPA compliance for user data
+
+### Scalability Approach
+
+- **Horizontal Scaling**: Ability to add more instances as user base grows
+- **Database Sharding**: For efficient data distribution
+- **Microservices Architecture**: For independent scaling of components
+- **CDN Integration**: For global content delivery
+- **Caching Strategy**: Multi-level caching for performance optimization

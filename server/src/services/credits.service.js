@@ -23,6 +23,27 @@ class CreditsService {
    */
   async getUserBalance(userId) {
     try {
+      /* ------------------------------------------------------------------
+       * Demo user shortcut:
+       * If the request comes from the hard-coded demo user (`demo-user-123`)
+       * we return an in-memory mock balance so that the rest of the credits
+       * system works without touching the database.
+       * ----------------------------------------------------------------- */
+      if (userId === 'demo-user-123') {
+        const now = new Date();
+        return {
+          user: 'demo-user-123',
+          balance: 1000,
+          totalPurchased: 1000,
+          totalUsed: 0,
+          lowBalanceThreshold: 100,
+          lowBalanceNotificationsEnabled: true,
+          lastTransaction: now,
+          createdAt: now,
+          updatedAt: now
+        };
+      }
+
       let userBalance = await UserCreditBalance.findOne({ user: userId });
       
       // If no balance record exists, create one with zero balance

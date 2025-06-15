@@ -15,6 +15,24 @@ const auth = async (req, res, next) => {
       return res.status(401).json({ message: 'No authentication token, access denied' });
     }
 
+    /**
+     * ------------------------------------------------------------------
+     * Demo Login Support
+     * ------------------------------------------------------------------
+     * If the frontend is using the hard-coded demo credentials, bypass the
+     * normal JWT flow entirely and attach a fake user to the request so the
+     * rest of the API behaves as if the user were authenticated.
+     */
+    if (token === 'demo-token' || token === 'demo-refresh-token') {
+      req.user = {
+        id: 'demo-user-123',
+        email: 'demo@waterfall.dev',
+        role: 'user',
+        subscription: 'pro'
+      };
+      return next();
+    }
+
     // Verify token
     const decoded = jwt.verify(token, config.jwt.secret);
     
@@ -84,6 +102,13 @@ const checkFeatureAccess = (feature) => {
   return async (req, res, next) => {
     if (!req.user) {
       return res.status(401).json({ message: 'Authentication required' });
+    }
+
+    // ------------------------------------------------------------------
+    // Demo user shortcut – allow full feature access
+    // ------------------------------------------------------------------
+    if (req.user.id === 'demo-user-123') {
+      return next();
     }
 
     try {
