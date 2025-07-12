@@ -93,6 +93,30 @@ app.include_router(cia.router, prefix="/api/v1/cia", tags=["cia"])
 app.include_router(cartwheel.router, prefix="/api/v1/cartwheel", tags=["cartwheel"])
 app.include_router(adsby.router, prefix="/api/v1/adsby", tags=["adsby"])
 
+# Analytics integration routes
+try:
+    from .routes import analytics
+    app.include_router(analytics.router, prefix="/api/v1/analytics", tags=["analytics"])
+except ImportError as e:
+    logger.warning(f"Analytics routes not available: {e}")
+    pass
+
+# Scheduling integration routes
+try:
+    from .routes import scheduling
+    app.include_router(scheduling.router, prefix="/api/v1/scheduling", tags=["scheduling"])
+except ImportError as e:
+    logger.warning(f"Scheduling routes not available: {e}")
+    pass
+
+# Workflow orchestration routes
+try:
+    from .routes import workflow
+    app.include_router(workflow.router, prefix="/api/v1/workflow", tags=["workflow"])
+except ImportError as e:
+    logger.warning(f"Workflow routes not available: {e}")
+    pass
+
 
 @app.get("/")
 async def root():
