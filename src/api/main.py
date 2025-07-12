@@ -117,6 +117,14 @@ except ImportError as e:
     logger.warning(f"Workflow routes not available: {e}")
     pass
 
+# Blog publishing routes
+try:
+    from .routes import blog_publishing
+    app.include_router(blog_publishing.router, prefix="/api/v1/publishing", tags=["blog_publishing"])
+except ImportError as e:
+    logger.warning(f"Blog publishing routes not available: {e}")
+    pass
+
 
 @app.get("/")
 async def root():

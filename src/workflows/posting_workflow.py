@@ -14,6 +14,9 @@ from uuid import UUID, uuid4
 from ..database.cartwheel_models import ContentPiece, ContentCluster, ContentFormat
 from ..database.models import CIASession
 from ..integrations.ghl_mcp_client import GHLMCPClient, GHLSocialPost, GHLBrandSettings
+from ..integrations.notion_mcp_client import NotionMCPClient
+from ..publishing.blog_publisher import BlogPublisher, BlogFormattingConfig
+from ..integrations.utm_automation import UTMGenerator
 from ..scheduling.content_calendar import ContentCalendar, WeeklySchedule, PostingFrequency
 from ..analytics.content_attribution import ContentAttributionEngine
 
@@ -25,6 +28,7 @@ class WorkflowStage(Enum):
     CONTENT_PREP = "content_preparation"
     CALENDAR_SCHEDULE = "calendar_scheduling"
     BRAND_SYNC = "brand_synchronization"
+    BLOG_PUBLISHING = "blog_publishing"
     GHL_POSTING = "ghl_posting"
     PERFORMANCE_TRACKING = "performance_tracking"
     COMPLETED = "completed"
@@ -130,6 +134,7 @@ class PostingWorkflowEngine:
         self,
         ghl_client: GHLMCPClient,
         content_calendar: ContentCalendar,
+        notion_client: Optional[NotionMCPClient] = None,
         attribution_engine: Optional[ContentAttributionEngine] = None
     ):
         """
@@ -138,12 +143,21 @@ class PostingWorkflowEngine:
         Args:
             ghl_client: GHL MCP client for posting
             content_calendar: Content calendar system
+            notion_client: Optional Notion MCP client for blog publishing
             attribution_engine: Optional attribution tracking
         """
         self.ghl_client = ghl_client
         self.content_calendar = content_calendar
+        self.notion_client = notion_client
         self.attribution_engine = attribution_engine
         self.active_workflows: Dict[str, WorkflowExecution] = {}
+        
+        # Initialize blog publisher if Notion client provided
+        if self.notion_client:
+            self.blog_publisher = BlogPublisher(
+                notion_client=self.notion_client,
+                utm_generator=UTMGenerator()
+            )
     
     async def execute_full_posting_workflow(
         self,
@@ -153,7 +167,8 @@ class PostingWorkflowEngine:
         cia_session: Optional[CIASession] = None,
         week_start: Optional[datetime] = None,
         posting_frequency: PostingFrequency = PostingFrequency.DAILY,
-        auto_approve: bool = False
+        auto_approve: bool = False,
+        notion_database_id: Optional[str] = None
     ) -> WorkflowExecution:
         """
         Execute the complete posting workflow
@@ -205,10 +220,14 @@ class PostingWorkflowEngine:
             if cia_session:
                 await self._stage_brand_synchronization(workflow, cia_session)
             
-            # Stage 4: GHL Posting
+            # Stage 4: Blog Publishing (if Notion database provided)
+            if notion_database_id and self.notion_client:
+                await self._stage_blog_publishing(workflow, notion_database_id, cia_session)
+            
+            # Stage 5: GHL Posting
             await self._stage_ghl_posting(workflow, auto_approve)
             
-            # Stage 5: Performance Tracking Setup
+            # Stage 6: Performance Tracking Setup
             await self._stage_performance_tracking(workflow)
             
             # Complete workflow
@@ -326,8 +345,62 @@ class PostingWorkflowEngine:
             workflow.add_error(WorkflowStage.BRAND_SYNC, str(e))
             raise
     
+    async def _stage_blog_publishing(
+        self,
+        workflow: WorkflowExecution,
+        notion_database_id: str,
+        cia_session: Optional[CIASession]
+    ):
+        """Stage 4: Publish blog content to Notion"""
+        try:
+            logger.info(f"Workflow {workflow.id}: Starting blog publishing")
+            workflow.current_stage = WorkflowStage.BLOG_PUBLISHING
+            
+            # Publish content cluster to Notion
+            publish_result = await self.blog_publisher.publish_content_cluster(
+                database_id=notion_database_id,
+                content_cluster=ContentCluster(
+                    id=workflow.cluster_id,
+                    cluster_topic="Content Cluster",
+                    client_id=UUID(workflow.client_id),
+                    cia_session_id=cia_session.id if cia_session else UUID("00000000-0000-0000-0000-000000000000"),
+                    target_date=datetime.now() + timedelta(days=7),
+                    content_count=len(workflow.content_pieces),
+                    status="active"
+                ),
+                content_pieces=workflow.content_pieces,
+                cia_session=cia_session,
+                stagger_hours=24
+            )
+            
+            if not publish_result.get("success"):
+                workflow.add_error(
+                    WorkflowStage.BLOG_PUBLISHING,
+                    "Blog publishing failed",
+                    publish_result
+                )
+            else:
+                # Add blog publishing results to performance data
+                if not workflow.performance_data:
+                    workflow.performance_data = {}
+                
+                workflow.performance_data["blog_publishing"] = {
+                    "published_count": publish_result.get("published", 0),
+                    "failed_count": publish_result.get("failed", 0),
+                    "internal_links": publish_result.get("internal_link_network", {}),
+                    "buildfast_ready": True
+                }
+            
+            workflow.stages_completed.append(WorkflowStage.BLOG_PUBLISHING)
+            
+            logger.info(f"Workflow {workflow.id}: Blog publishing completed")
+            
+        except Exception as e:
+            workflow.add_error(WorkflowStage.BLOG_PUBLISHING, str(e))
+            raise
+    
     async def _stage_ghl_posting(self, workflow: WorkflowExecution, auto_approve: bool):
-        """Stage 4: Post content to GHL"""
+        """Stage 5: Post content to GHL"""
         try:
             logger.info(f"Workflow {workflow.id}: Starting GHL posting")
             workflow.current_stage = WorkflowStage.GHL_POSTING
@@ -365,7 +438,7 @@ class PostingWorkflowEngine:
             raise
     
     async def _stage_performance_tracking(self, workflow: WorkflowExecution):
-        """Stage 5: Set up performance tracking"""
+        """Stage 6: Set up performance tracking"""
         try:
             logger.info(f"Workflow {workflow.id}: Starting performance tracking setup")
             workflow.current_stage = WorkflowStage.PERFORMANCE_TRACKING
