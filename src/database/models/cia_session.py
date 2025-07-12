@@ -10,6 +10,7 @@ from pydantic import Field, validator, model_validator
 
 from .base import BaseCIAModel, MetadataMixin
 from ...config.constants import CIAPhase, PhaseStatus
+from pydantic import BaseModel
 
 
 class CIASessionBase(BaseModel):
