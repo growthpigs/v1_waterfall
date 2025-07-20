@@ -1,0 +1,94 @@
+services:
+  # Backend API Service
+  - type: web
+    name: brand-bos-api
+    runtime: docker
+    repo: https://github.com/YOUR_GITHUB_USERNAME/V1_Waterfall
+    branch: main
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    healthCheckPath: /health
+    envVars:
+      # Core Settings
+      - key: PORT
+        value: 8080
+      - key: ENVIRONMENT
+        value: production
+      - key: LOG_LEVEL
+        value: info
+      - key: SECRET_KEY
+        generateValue: true
+      
+      # Database (Supabase)
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_ANON_KEY
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+      
+      # Redis (Use Render Redis or external)
+      - key: REDIS_URL
+        fromService:
+          type: redis
+          name: brand-bos-redis
+          property: connectionString
+      
+      # AI Services
+      - key: ANTHROPIC_API_KEY
+        sync: false
+      
+      # Google Ads
+      - key: GOOGLE_ADS_CLIENT_ID
+        sync: false
+      - key: GOOGLE_ADS_CLIENT_SECRET
+        sync: false
+      - key: GOOGLE_ADS_DEVELOPER_TOKEN
+        sync: false
+      
+      # Notifications
+      - key: SLACK_WEBHOOK_URL
+        sync: false
+      - key: SMTP_HOST
+        sync: false
+      - key: SMTP_PORT
+        value: 587
+      - key: SMTP_USERNAME
+        sync: false
+      - key: SMTP_PASSWORD
+        sync: false
+      
+      # CORS
+      - key: ALLOWED_ORIGINS
+        value: https://brand-bos.vercel.app,https://yourdomain.com
+
+  # Redis Cache Service
+  - type: redis
+    name: brand-bos-redis
+    ipAllowList: []
+    plan: free
+    maxmemoryPolicy: allkeys-lru
+
+# Database Notes:
+# We're using Supabase as an external managed database service.
+# If you prefer, you can add a PostgreSQL database here:
+#
+# databases:
+#   - name: brand-bos-db
+#     plan: free
+#     databaseName: brandbos
+#     user: brandbos
+
+# Static Site (Frontend) Notes:
+# Frontend should be deployed to Vercel for better performance.
+# If you want to deploy frontend on Render, add:
+#
+# - type: static
+#   name: brand-bos-frontend
+#   repo: https://github.com/YOUR_GITHUB_USERNAME/V1_Waterfall
+#   branch: main
+#   buildCommand: cd frontend && npm install && npm run build
+#   staticPublishPath: ./frontend/dist
+#   envVars:
+#     - key: VITE_API_URL
+#       value: https://brand-bos-api.onrender.com

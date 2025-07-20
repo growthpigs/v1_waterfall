@@ -1,0 +1,38 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    font-feature-settings:
+      "rlig" 1,
+      "calt" 1;
+  }
+  ::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+@layer components {
+  .glass-card {
+    @apply bg-black/15 backdrop-blur-lg border border-purple-500/30 rounded-2xl shadow-2xl;
+  }
+
+  .glass-card:hover {
+    @apply bg-black/20 border-orange-500/40;
+    box-shadow:
+      0 10px 15px -3px rgba(168, 85, 247, 0.2),
+      0 4px 6px -2px rgba(168, 85, 247, 0.05);
+  }
+}
+
+/* Hide scrollbars completely */
+* {
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE and Edge */
+}
+
+/* Webkit browsers */
+*::-webkit-scrollbar {
+  display: none;
+}
